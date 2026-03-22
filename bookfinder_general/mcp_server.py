@@ -56,11 +56,54 @@ def _validate_deps():
     if AA_KEY:
         logger.info(f"ANNAS_KEY configured — fast downloads enabled")
 
-    for mod, name in [("pymupdf4llm", "PDF text extraction"), ("deep_translator", "translation")]:
+    for mod, name in [("pymupdf4llm", "PDF text extraction"), ("deep_translator", "translation"), ("rapidocr_onnxruntime", "OCR for scanned PDFs")]:
         try:
             __import__(mod)
         except ImportError:
             logger.warning(f"{mod} not installed — {name} disabled")
+
+
+def _sync_library(entry):
+    """Auto-commit and push library changes to git (if BOOKFINDER_SYNC is enabled)."""
+    import subprocess
+    from .config import LIBRARY_SYNC, LIBRARY_DIR
+
+    if not LIBRARY_SYNC:
+        return
+
+    git_dir = os.path.join(LIBRARY_DIR, ".git")
+    if not os.path.isdir(git_dir):
+        logger.warning("BOOKFINDER_SYNC enabled but library is not a git repo")
+        return
+
+    try:
+        run = lambda cmd: subprocess.run(
+            cmd, cwd=LIBRARY_DIR, capture_output=True, text=True, timeout=10
+        )
+
+        # Stage the book's directory
+        run(["git", "add", f"{entry.id}/"])
+
+        # Commit
+        msg = f"Add: {entry.title}"
+        if entry.author:
+            msg += f" by {entry.author}"
+        result = run(["git", "commit", "-m", msg])
+        if result.returncode != 0:
+            if "nothing to commit" in result.stdout:
+                return
+            logger.warning(f"Library git commit failed: {result.stderr.strip()}")
+            return
+
+        # Push (best-effort)
+        result = run(["git", "push"])
+        if result.returncode == 0:
+            logger.info(f"Library synced: {entry.id}")
+        else:
+            logger.warning(f"Library push failed (committed locally): {result.stderr.strip()}")
+
+    except Exception as e:
+        logger.warning(f"Library sync error: {e}")
 
 
 @mcp.tool()
@@ -317,6 +360,9 @@ async def _download_book_impl(
         pass
 
     logger.info(f"Done! Book saved as '{entry.id}'")
+
+    # Auto-sync library to git if enabled
+    _sync_library(entry)
 
     result = {
         "status": "downloaded",

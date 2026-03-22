@@ -4,7 +4,7 @@
 
 **Search. Download. Extract. Translate. Summarize.**
 
-An MCP server and web app that finds research books, downloads them, extracts clean readable text, translates foreign languages, and generates polished PDF summaries — all accessible to AI assistants like Claude.
+MCP server and research tool. Finds books on Anna's Archive, downloads them, pulls out the text, translates if needed, and writes up summaries. Point Claude at it and ask for a book.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-compatible-00d4ff?style=flat-square)](https://modelcontextprotocol.io)
@@ -12,7 +12,7 @@ An MCP server and web app that finds research books, downloads them, extracts cl
 
 <br>
 
-*Named after the [Witchfinder General](https://en.wikipedia.org/wiki/Witchfinder_General) — except instead of hunting witches, it hunts books.*
+*Named after the [Witchfinder General](https://en.wikipedia.org/wiki/Witchfinder_General). Hunts books, not witches.*
 
 </div>
 
@@ -33,14 +33,14 @@ Search query ──> Anna's Archive ──> Download ──> Extract text ──
 
 | Feature | Description |
 |---------|-------------|
-| **Search** | Query Anna's Archive in any language — titles, authors, ISBNs, topics |
-| **Download** | Automatic mirror fallback across LibGen, IPFS, and Anna's Archive mirrors |
-| **Extract** | Convert PDF/EPUB to clean Markdown preserving structure, tables, and headings. EPUBs preferred — always extractable, unlike scanned PDFs |
-| **Translate** | Auto-translate non-English books to English (optimized for AI readability) |
-| **Summarize** | Generate clean research summaries with [stop-slop](https://github.com/hardikpandya/stop-slop) rules — no AI-sounding prose |
-| **PDF Reports** | Polished documents with cover pages, typography, and proper formatting |
-| **Topic Briefs** | Synthesize multiple books into a single research brief |
-| **Library** | Organized research collection with metadata, full-text search, and tagging |
+| **Search** | Search Anna's Archive — titles, authors, ISBNs, any language |
+| **Download** | Mirror fallback across LibGen, IPFS, Anna's Archive. Validates every file |
+| **Extract** | PDF/EPUB to Markdown. Prefers EPUBs (real text). OCR fallback for scans |
+| **Translate** | Non-English books auto-translated via Google Translate at download time |
+| **Summarize** | Research summaries with [stop-slop](https://github.com/hardikpandya/stop-slop) rules — reads like a person wrote it |
+| **PDF Reports** | Cover pages, headings, page numbers. Proper typography |
+| **Topic Briefs** | Combine multiple books into one research brief |
+| **Library** | Organized collection with metadata, full-text search, git sync |
 
 ---
 
@@ -54,11 +54,13 @@ cd bookfinder-general
 pip install -e .
 ```
 
-**Optional — browser-based search** (only needed if you don't have an `ANNAS_KEY`):
+**Optional extras:**
 
 ```bash
-pip install -e ".[browser]"
+pip install -e ".[browser]"    # Browser search (only needed without ANNAS_KEY)
 playwright install chromium
+
+pip install -e ".[ocr]"        # OCR for scanned PDFs (RapidOCR)
 ```
 
 ### Use
@@ -75,7 +77,7 @@ Double-click **`START.bat`** or run:
 python app.py
 ```
 
-Opens at [localhost:5000](http://localhost:5000) — search, browse, download, and manage your library.
+Opens at [localhost:5000](http://localhost:5000).
 
 </td>
 <td width="50%">
@@ -103,7 +105,7 @@ Add to your Claude Code settings:
 </tr>
 </table>
 
-Then just ask Claude naturally:
+Then ask Claude:
 
 > *"Find me books about 17th century star fort design"*
 >
@@ -159,27 +161,38 @@ Books are organized in `~/Research/BookFinder/` (configurable):
 
 ### Cloudflare Bypass
 
-Anna's Archive uses bot protection. With an `ANNAS_KEY`, downloads go through the fast API and don't need a browser at all. Without a key, [Playwright](https://playwright.dev/) launches a headless Chromium browser to handle Cloudflare challenges automatically. Set `BOOKFINDER_HEADLESS=false` if you need a visible browser window for debugging.
+Anna's Archive sits behind Cloudflare. With an `ANNAS_KEY`, downloads go through their fast API — no browser needed. Without a key, [Playwright](https://playwright.dev/) drives a headless Chromium to get past the challenge. Set `BOOKFINDER_HEADLESS=false` if you need to see the browser window.
 
 ### Download Validation
 
-Every downloaded file is validated with magic byte checking (`%PDF` for PDFs, `PK` for EPUBs, etc.) to ensure you get real files, not HTML error pages or paywalls. If the fast API fails, the tool falls back to browser-based downloading through LibGen and other mirrors. The fast API also iterates multiple download servers and storage paths to find a working source.
+Downloads are checked against magic bytes (`%PDF`, `PK` for EPUBs, etc.) to catch HTML error pages and paywalls. If the fast API fails, falls back to LibGen and other mirrors. Tries multiple download servers and storage paths before giving up.
 
 ### Mirror Rotation
 
-The tool automatically tries multiple mirrors (`.gd`, `.gl`, `.pk`) if one goes down. Domains change periodically due to legal pressure — update the mirror list in `config.py` if needed.
+Tries `.gd`, `.gl`, `.pk` mirrors in order. Domains rotate due to legal pressure — update `config.py` if they change.
 
 ### Text Extraction
 
-Search results are automatically sorted with EPUB first — EPUBs are real text (HTML in a zip) and always extract cleanly, while large PDFs are often scanned images with no extractable text. [pymupdf4llm](https://github.com/pymupdf/RAG) converts PDFs and EPUBs to clean Markdown preserving document structure, tables, lists, and page boundaries. Files over 25MB skip extraction (likely scanned).
+Search results are sorted with EPUB first — EPUBs contain real text and always extract cleanly. Large PDFs are often scanned images. [pymupdf4llm](https://github.com/pymupdf/RAG) handles text-based PDFs and EPUBs. For scanned PDFs, install the optional `[ocr]` extra — [RapidOCR](https://github.com/RapidAI/RapidOCR) will automatically kick in when regular extraction comes back empty.
 
 ### Translation
 
-Non-English books are auto-translated via [Google Translate](https://github.com/nidhaloff/deep-translator) at download time. The translation is optimized for machine readability — accurate enough for AI analysis, not intended for publication.
+Non-English books get translated via [Google Translate](https://github.com/nidhaloff/deep-translator) at download time. Good enough for AI analysis — not publication-grade.
+
+### Library Sync
+
+Set `BOOKFINDER_SYNC=true` to auto-commit and push after each download. Keeps extracted text synced across machines without the large original files. Set up:
+
+```bash
+cd ~/Research/BookFinder
+git init && git remote add origin git@github.com:you/your-library.git
+```
+
+Add `**/original.*` to `.gitignore` to keep the repo lightweight — only extracted text and metadata get pushed.
 
 ### Summary Generation
 
-Summaries use embedded [stop-slop](https://github.com/hardikpandya/stop-slop) rules to eliminate AI writing patterns. The result reads like a knowledgeable researcher wrote it, not a language model. PDF reports are generated with [fpdf2](https://py-pdf.github.io/fpdf2/) — styled cover pages, clean typography, proper headings, page numbers.
+Summaries run through embedded [stop-slop](https://github.com/hardikpandya/stop-slop) rules that strip out AI writing patterns. The output reads like a person wrote it. PDF reports via [fpdf2](https://py-pdf.github.io/fpdf2/) with cover pages, headings, and page numbers.
 
 ---
 
@@ -190,10 +203,11 @@ Summaries use embedded [stop-slop](https://github.com/hardikpandya/stop-slop) ru
 | `ANNAS_KEY` | Anna's Archive membership key (**recommended**) | *(none)* |
 | `BOOKFINDER_LIBRARY` | Path to your research library | `~/Research/BookFinder` |
 | `BOOKFINDER_HEADLESS` | Set to `false` for visible browser window | `true` |
+| `BOOKFINDER_SYNC` | Auto-commit library to git after downloads | `false` |
 
-**Recommended: Anna's Archive membership key**
+**Anna's Archive membership key** (recommended)
 
-Donating to Anna's Archive (~$5-20) gives you an API key for fast, browserless downloads. With a key, Playwright is not required at all:
+A donation to Anna's Archive (~$5-20) gets you an API key. With it, downloads are fast and don't need Playwright at all:
 
 ```bash
 # Windows
@@ -211,6 +225,7 @@ export ANNAS_KEY=your_key_here
 |-----------|---------|---------|
 | Browser | [Playwright](https://playwright.dev/) | Cloudflare bypass |
 | Extraction | [pymupdf4llm](https://github.com/pymupdf/RAG) | PDF/EPUB to Markdown |
+| OCR | [RapidOCR](https://github.com/RapidAI/RapidOCR) | Scanned PDF fallback (optional) |
 | Translation | [deep-translator](https://github.com/nidhaloff/deep-translator) | Google Translate |
 | PDF Reports | [fpdf2](https://py-pdf.github.io/fpdf2/) | Summary PDF generation |
 | MCP Server | [MCP SDK](https://modelcontextprotocol.io/) | AI assistant integration |

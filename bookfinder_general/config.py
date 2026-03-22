@@ -23,6 +23,9 @@ LIBRARY_DIR = os.environ.get(
 # Legacy download directory (kept for web UI compatibility)
 DOWNLOAD_DIR = LIBRARY_DIR
 
+# Auto-sync library to git after downloads (opt-in)
+LIBRARY_SYNC = os.environ.get("BOOKFINDER_SYNC", "").lower() in ("true", "1", "yes")
+
 # Request settings
 REQUEST_TIMEOUT = 30
 MAX_RETRIES = 3

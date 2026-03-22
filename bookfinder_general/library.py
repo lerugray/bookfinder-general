@@ -146,8 +146,12 @@ def save_book(
     file_size_mb = os.path.getsize(original_dest) / (1024 * 1024)
     if extract_text and file_size_mb > 25:
         import sys
-        print(f"[bookfinder] Skipping extraction: file is {file_size_mb:.1f}MB (limit 25MB)", file=sys.stderr)
-        extract_text = False
+        from .extractor import RAPIDOCR_AVAILABLE
+        if RAPIDOCR_AVAILABLE:
+            print(f"[bookfinder] Large file ({file_size_mb:.1f}MB) — OCR available, attempting extraction", file=sys.stderr)
+        else:
+            print(f"[bookfinder] Skipping extraction: file is {file_size_mb:.1f}MB (limit 25MB, install rapidocr-onnxruntime for OCR)", file=sys.stderr)
+            extract_text = False
 
     if extract_text:
         try:
