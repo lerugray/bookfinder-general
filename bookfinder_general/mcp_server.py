@@ -10,7 +10,7 @@ import logging
 import os
 import sys
 
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import FastMCP
 
 logger = logging.getLogger("bookfinder-general")
 logging.basicConfig(
@@ -76,6 +76,9 @@ async def search_books(
         return json.dumps({"error": "Search timed out after 2 minutes. Try again."})
     except ConnectionError as e:
         return json.dumps({"error": str(e)})
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        return json.dumps({"error": f"Search failed: {e}"})
 
     if not results:
         return json.dumps({"results": [], "message": "No results found. Try different search terms."})
@@ -108,7 +111,6 @@ async def download_book(
     save_to_project: bool = False,
     project_path: str = "",
     translate: bool = True,
-    ctx: Context | None = None,
 ) -> str:
     """Download a book and process it for research use.
 
@@ -130,22 +132,28 @@ async def download_book(
     Returns:
         JSON with the book's library ID and paths to all generated files.
     """
+    try:
+        return await _download_book_impl(
+            md5=md5, title=title, author=author, year=year,
+            language=language, save_to_project=save_to_project,
+            project_path=project_path, translate=translate,
+        )
+    except Exception as e:
+        logger.error(f"download_book crashed: {e}")
+        return json.dumps({"error": f"Download failed unexpectedly: {e}"})
+
+
+async def _download_book_impl(
+    md5: str, title: str, author: str, year: str,
+    language: str, save_to_project: bool, project_path: str, translate: bool,
+) -> str:
     from .download import try_download_from_links
     from .search import get_download_links
 
     display_title = title or md5[:12]
 
-    async def _progress(step: int, total: int, msg: str):
-        """Log progress and report via MCP if context available."""
-        logger.info(msg)
-        if ctx:
-            try:
-                await ctx.report_progress(step, total)
-            except Exception:
-                pass
-
     # Step 1: Check if already downloaded
-    await _progress(0, 4, f"Checking library for '{display_title}'...")
+    logger.info(f"Step 1/4: Checking library for '{display_title}'...")
     existing = [b for b in list_books() if b.md5 == md5]
     if existing:
         book = existing[0]
@@ -165,7 +173,7 @@ async def download_book(
         return json.dumps(result)
 
     # Step 2: Get download links
-    await _progress(1, 4, f"Finding download links for '{display_title}'...")
+    logger.info(f"Step 2/4: Finding download links for '{display_title}'...")
 
     def _get_links():
         return get_download_links(md5)
@@ -175,7 +183,7 @@ async def download_book(
     except asyncio.TimeoutError:
         logger.error("Timed out getting download links (120s)")
         return json.dumps({"error": "Timed out finding download links. Try again."})
-    except ConnectionError as e:
+    except Exception as e:
         logger.error(f"Failed to get links: {e}")
         return json.dumps({"error": f"Could not get download links: {e}"})
 
@@ -186,7 +194,7 @@ async def download_book(
     logger.info(f"Found {len(links)} download link(s): {', '.join(l['source'] for l in links)}")
 
     # Step 3: Download the file
-    await _progress(2, 4, f"Downloading '{display_title}' ({len(links)} source(s))...")
+    logger.info(f"Step 3/4: Downloading '{display_title}' ({len(links)} source(s))...")
     ext = "pdf"  # Default extension
     import tempfile
     temp_dir = tempfile.mkdtemp(prefix="bookfinder_")
@@ -203,7 +211,10 @@ async def download_book(
         filepath = await asyncio.wait_for(asyncio.to_thread(_do_download), timeout=180)
     except asyncio.TimeoutError:
         logger.error("Download timed out (180s)")
-        return json.dumps({"error": "Download timed out after 3 minutes. The file may be too large or the server is slow."})
+        return json.dumps({"error": "Download timed out after 3 minutes."})
+    except Exception as e:
+        logger.error(f"Download error: {e}")
+        return json.dumps({"error": f"Download failed: {e}"})
 
     if not filepath:
         logger.error("Download failed — all sources unavailable")
@@ -218,7 +229,7 @@ async def download_book(
         ext = actual_ext
 
     # Step 4: Save to library with extraction and translation
-    await _progress(3, 4, f"Extracting text and saving '{display_title}' to library...")
+    logger.info(f"Step 4/4: Extracting text and saving '{display_title}' to library...")
 
     def _do_save():
         return save_book(
