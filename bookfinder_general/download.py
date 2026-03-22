@@ -120,6 +120,15 @@ def download_file(
             )
             resp.raise_for_status()
 
+            # Reject HTML responses — means we got an error page, not a file
+            content_type = resp.headers.get("content-type", "").lower()
+            if "text/html" in content_type:
+                import sys
+                print(f"[bookfinder] WARNING: Got HTML instead of file from {url[:80]}...", file=sys.stderr)
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(2 ** attempt)
+                continue
+
             filename = _get_filename_from_response(resp, fallback_name)
             filepath = os.path.join(download_dir, filename)
 
@@ -139,9 +148,18 @@ def download_file(
                         if progress_callback:
                             progress_callback(downloaded, total_size)
 
-            # Verify we got something
-            if os.path.getsize(filepath) > 0:
-                return filepath
+            # Verify we got something real (not an HTML error page)
+            fsize = os.path.getsize(filepath)
+            if fsize > 0:
+                with open(filepath, "rb") as check:
+                    head = check.read(256)
+                # Reject files that look like HTML
+                if head.lstrip()[:15].lower().startswith((b"<!doctype", b"<html", b"<head")):
+                    import sys
+                    print(f"[bookfinder] WARNING: Downloaded file is HTML, not {extension}: {filepath}", file=sys.stderr)
+                    os.remove(filepath)
+                else:
+                    return filepath
             else:
                 os.remove(filepath)
 

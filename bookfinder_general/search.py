@@ -228,17 +228,24 @@ def get_download_links(md5: str, mirror: str | None = None) -> list[dict]:
     # Try fast download API if we have a key
     if AA_KEY:
         try:
+            import sys
             api_url = f"{mirror}/dyn/api/fast_download.json?md5={md5}&key={AA_KEY}&path_index=0&domain_index=0"
+            print(f"[bookfinder] Fast API request for md5={md5[:12]}...", file=sys.stderr)
             resp = requests.get(api_url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
             if resp.status_code == 200:
                 data = resp.json()
                 if "download_url" in data:
+                    print(f"[bookfinder] Fast API: got download URL", file=sys.stderr)
                     links.append({
                         "url": data["download_url"],
                         "source": "Anna's Archive (Fast API)",
                     })
-        except Exception:
-            pass
+                else:
+                    print(f"[bookfinder] Fast API: no download_url in response: {list(data.keys())}", file=sys.stderr)
+            else:
+                print(f"[bookfinder] Fast API: HTTP {resp.status_code}", file=sys.stderr)
+        except Exception as e:
+            print(f"[bookfinder] Fast API error: {e}", file=sys.stderr)
 
     # Also get links from detail page via browser
     from .browser import detail_page
