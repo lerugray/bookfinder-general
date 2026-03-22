@@ -231,60 +231,11 @@ def download_file(
     return None
 
 
-def _browser_download(
-    url: str,
-    title: str,
-    extension: str,
-    download_dir: str,
-) -> str | None:
-    """Download a file using Playwright browser (handles Cloudflare, cookies, JS redirects)."""
-    page = None
-    try:
-        from .browser import _get_browser_and_context
+# Sources that require login or are unreliable — skip these
+SKIP_SOURCES = {"z-library"}
 
-        print(f"[bookfinder] Trying browser download: {url[:100]}", file=sys.stderr)
-        _, context = _get_browser_and_context()
-
-        page = context.new_page()
-
-        # Try to catch a download event — timeout quickly (30s) since if it's not
-        # a download link it'll just load an HTML page and we don't want to hang
-        try:
-            with page.expect_download(timeout=30000) as download_info:
-                page.goto(url, timeout=30000)
-            download = download_info.value
-
-            suggested = download.suggested_filename
-            if suggested and "." in suggested:
-                filename = sanitize_filename(suggested)
-            else:
-                filename = sanitize_filename(f"{title}.{extension}")
-
-            filepath = os.path.join(download_dir, filename)
-            download.save_as(filepath)
-
-            if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-                if _validate_file_bytes(filepath, extension):
-                    print(f"[bookfinder] Browser download OK: {filepath}", file=sys.stderr)
-                    return filepath
-                else:
-                    os.remove(filepath)
-                    print(f"[bookfinder] Browser download failed validation", file=sys.stderr)
-
-        except Exception as e:
-            # expect_download timed out — URL loaded a page instead of triggering download
-            print(f"[bookfinder] Browser: no download triggered ({e})", file=sys.stderr)
-
-    except Exception as e:
-        print(f"[bookfinder] Browser download setup error: {e}", file=sys.stderr)
-    finally:
-        if page:
-            try:
-                page.close()
-            except Exception:
-                pass
-
-    return None
+# Max browser download attempts (each opens a Chromium window)
+MAX_BROWSER_ATTEMPTS = 2
 
 
 def try_download_from_links(
@@ -296,18 +247,27 @@ def try_download_from_links(
 ) -> str | None:
     """
     Try downloading from a list of mirror links, stopping at the first success.
-    Falls back to browser-based download if plain HTTP fails for a link.
+    Falls back to browser-based download for a limited number of links.
 
     Returns path to downloaded file, or None if all links fail.
     """
+    from .browser import browser_download
+
     ensure_download_dir(download_dir)
+    browser_attempts = 0
 
     for link in links:
         url = link["url"]
         source = link.get("source", "unknown")
+
+        # Skip known-bad sources
+        if source.lower() in SKIP_SOURCES:
+            print(f"[bookfinder] Skipping {source}: requires login", file=sys.stderr)
+            continue
+
         print(f"[bookfinder] Trying link: {source} — {url[:80]}", file=sys.stderr)
 
-        # First try plain HTTP (fast)
+        # First try plain HTTP (fast, no browser window)
         result = download_file(
             url=url,
             title=title,
@@ -318,15 +278,18 @@ def try_download_from_links(
         if result:
             return result
 
-        # If plain HTTP failed, try browser-based download (handles Cloudflare/JS)
-        result = _browser_download(
-            url=url,
-            title=title,
-            extension=extension,
-            download_dir=download_dir,
-        )
-        if result:
-            return result
+        # Browser fallback — limited attempts to avoid Chromium spam
+        if browser_attempts < MAX_BROWSER_ATTEMPTS:
+            browser_attempts += 1
+            print(f"[bookfinder] Browser fallback ({browser_attempts}/{MAX_BROWSER_ATTEMPTS})", file=sys.stderr)
+            result = browser_download(
+                url=url,
+                download_dir=download_dir,
+                title=title,
+                extension=extension,
+            )
+            if result:
+                return result
 
-    print(f"[bookfinder] All {len(links)} download links failed", file=sys.stderr)
+    print(f"[bookfinder] All download links failed", file=sys.stderr)
     return None

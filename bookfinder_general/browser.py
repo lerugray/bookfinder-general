@@ -1,7 +1,14 @@
-"""Browser-based access to Anna's Archive using Playwright."""
+"""Browser-based access to Anna's Archive using Playwright.
+
+All Playwright calls are pinned to a single dedicated thread to avoid
+greenlet 'Cannot switch to a different thread' errors when called from
+asyncio.to_thread() which dispatches to random pool threads.
+"""
 
 import re
 import time
+import threading
+import concurrent.futures
 
 from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
 
@@ -11,9 +18,13 @@ from .config import AA_KEY, BROWSER_TIMEOUT, MIRRORS
 _browser_instance = None
 _context_instance = None
 
+# Single dedicated thread for all Playwright operations
+_pw_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="playwright")
+_pw_lock = threading.Lock()
+
 
 def _get_browser_and_context() -> tuple[Browser, BrowserContext]:
-    """Get or create a persistent browser instance."""
+    """Get or create a persistent browser instance. Must run on the Playwright thread."""
     global _browser_instance, _context_instance
 
     if _browser_instance is None or not _browser_instance.is_connected():
@@ -59,8 +70,8 @@ def _wait_for_page_load(page: Page, timeout: int = BROWSER_TIMEOUT):
     return len(page.content()) > 500
 
 
-def fetch_page(url: str) -> str:
-    """Fetch a page using the browser, handling Cloudflare challenges."""
+def _fetch_page_impl(url: str) -> str:
+    """Fetch a page — runs on the Playwright thread."""
     _, context = _get_browser_and_context()
     page = context.new_page()
 
@@ -76,6 +87,16 @@ def fetch_page(url: str) -> str:
             page.close()
         except Exception:
             pass
+
+
+def fetch_page(url: str) -> str:
+    """Fetch a page using the browser, handling Cloudflare challenges.
+    Thread-safe: dispatches to the dedicated Playwright thread."""
+    try:
+        future = _pw_executor.submit(_fetch_page_impl, url)
+        return future.result(timeout=BROWSER_TIMEOUT / 1000 + 30)
+    except Exception:
+        return ""
 
 
 def search_page(query: str, mirror: str, lang: str = "", content: str = "",
@@ -105,18 +126,82 @@ def detail_page(md5: str, mirror: str) -> str:
     return fetch_page(url)
 
 
+def browser_download(url: str, download_dir: str, title: str, extension: str) -> str | None:
+    """Download a file via browser. Thread-safe: runs on the Playwright thread."""
+    try:
+        future = _pw_executor.submit(_browser_download_impl, url, download_dir, title, extension)
+        return future.result(timeout=60)
+    except Exception:
+        return None
+
+
+def _browser_download_impl(url: str, download_dir: str, title: str, extension: str) -> str | None:
+    """Browser download implementation — runs on the Playwright thread."""
+    import os
+    import sys
+    from .download import sanitize_filename, _validate_file_bytes
+
+    page = None
+    try:
+        _, context = _get_browser_and_context()
+        page = context.new_page()
+
+        print(f"[bookfinder] Browser download: {url[:100]}", file=sys.stderr)
+
+        with page.expect_download(timeout=30000) as download_info:
+            page.goto(url, timeout=30000)
+        download = download_info.value
+
+        suggested = download.suggested_filename
+        if suggested and "." in suggested:
+            filename = sanitize_filename(suggested)
+        else:
+            filename = sanitize_filename(f"{title}.{extension}")
+
+        filepath = os.path.join(download_dir, filename)
+        download.save_as(filepath)
+
+        if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+            if _validate_file_bytes(filepath, extension):
+                print(f"[bookfinder] Browser download OK: {filepath}", file=sys.stderr)
+                return filepath
+            else:
+                os.remove(filepath)
+                print(f"[bookfinder] Browser download failed validation", file=sys.stderr)
+
+    except Exception as e:
+        print(f"[bookfinder] Browser download: no download triggered ({e})", file=sys.stderr)
+    finally:
+        if page:
+            try:
+                page.close()
+            except Exception:
+                pass
+
+    return None
+
+
 def close_browser():
     """Clean up browser resources."""
     global _browser_instance, _context_instance
-    if _context_instance:
-        try:
-            _context_instance.close()
-        except Exception:
-            pass
-        _context_instance = None
-    if _browser_instance:
-        try:
-            _browser_instance.close()
-        except Exception:
-            pass
-        _browser_instance = None
+
+    def _close():
+        global _browser_instance, _context_instance
+        if _context_instance:
+            try:
+                _context_instance.close()
+            except Exception:
+                pass
+            _context_instance = None
+        if _browser_instance:
+            try:
+                _browser_instance.close()
+            except Exception:
+                pass
+            _browser_instance = None
+
+    try:
+        future = _pw_executor.submit(_close)
+        future.result(timeout=10)
+    except Exception:
+        pass
