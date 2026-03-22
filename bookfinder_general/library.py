@@ -142,7 +142,13 @@ def save_book(
         original_file=original_filename,
     )
 
-    # Extract text to markdown
+    # Extract text to markdown (skip files over 25MB — likely scanned/image PDFs)
+    file_size_mb = os.path.getsize(original_dest) / (1024 * 1024)
+    if extract_text and file_size_mb > 25:
+        import sys
+        print(f"[bookfinder] Skipping extraction: file is {file_size_mb:.1f}MB (limit 25MB)", file=sys.stderr)
+        extract_text = False
+
     if extract_text:
         try:
             from .extractor import extract_to_markdown
