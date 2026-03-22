@@ -71,7 +71,9 @@ async def search_books(
         )
 
     try:
-        results, mirror = await asyncio.to_thread(_do_search)
+        results, mirror = await asyncio.wait_for(asyncio.to_thread(_do_search), timeout=120)
+    except asyncio.TimeoutError:
+        return json.dumps({"error": "Search timed out after 2 minutes. Try again."})
     except ConnectionError as e:
         return json.dumps({"error": str(e)})
 
@@ -169,7 +171,10 @@ async def download_book(
         return get_download_links(md5)
 
     try:
-        links = await asyncio.to_thread(_get_links)
+        links = await asyncio.wait_for(asyncio.to_thread(_get_links), timeout=120)
+    except asyncio.TimeoutError:
+        logger.error("Timed out getting download links (120s)")
+        return json.dumps({"error": "Timed out finding download links. Try again."})
     except ConnectionError as e:
         logger.error(f"Failed to get links: {e}")
         return json.dumps({"error": f"Could not get download links: {e}"})
@@ -194,7 +199,11 @@ async def download_book(
             download_dir=temp_dir,
         )
 
-    filepath = await asyncio.to_thread(_do_download)
+    try:
+        filepath = await asyncio.wait_for(asyncio.to_thread(_do_download), timeout=180)
+    except asyncio.TimeoutError:
+        logger.error("Download timed out (180s)")
+        return json.dumps({"error": "Download timed out after 3 minutes. The file may be too large or the server is slow."})
 
     if not filepath:
         logger.error("Download failed — all sources unavailable")
@@ -228,7 +237,10 @@ async def download_book(
         )
 
     try:
-        entry = await asyncio.to_thread(_do_save)
+        entry = await asyncio.wait_for(asyncio.to_thread(_do_save), timeout=300)
+    except asyncio.TimeoutError:
+        logger.error("Text extraction timed out (300s)")
+        return json.dumps({"error": "Text extraction timed out. The book was downloaded but processing failed."})
     except Exception as e:
         logger.error(f"Failed to process: {e}")
         return json.dumps({"error": f"Failed to process book: {e}"})
