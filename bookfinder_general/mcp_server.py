@@ -36,7 +36,10 @@ mcp = FastMCP(
         "Bookfinder General helps you search for, download, and read research books. "
         "Use search_books to find books on Anna's Archive, download_book to "
         "save them with extracted text and translations, read_book to analyze content, "
-        "and summarize_book to create clean research summaries with PDF reports."
+        "and summarize_book to create clean research summaries with PDF reports. "
+        "IMPORTANT: Always prefer EPUB format over PDF when both are available — "
+        "EPUBs are real text and extract cleanly, while large PDFs are often scanned "
+        "images with no extractable text. Search results are sorted with EPUBs first."
     ),
 )
 
@@ -69,11 +72,16 @@ async def search_books(
 ) -> str:
     """Search Anna's Archive for books.
 
+    Results are sorted with EPUB first (best for text extraction), then PDF.
+    When downloading, prefer the first EPUB result with a real file size —
+    EPUBs always have extractable text, while large PDFs may be scanned images.
+
     Args:
         query: Search terms — works with titles in any language, author names,
                ISBN, or topic descriptions.
         language: Filter by language code (e.g. 'en', 'de', 'fr'). Empty for all.
         file_format: Filter by file type (e.g. 'pdf', 'epub'). Empty for all.
+                     Leave empty to get both formats (recommended).
         content_type: Filter by content type ('book_nonfiction', 'book_fiction',
                       'magazine', etc.). Empty for all.
 
@@ -103,6 +111,26 @@ async def search_books(
     if not results:
         return json.dumps({"results": [], "message": "No results found.", "suggestion": "Try broader search terms, search by author name, or try a different language."})
 
+    # Sort results: EPUB first (better text extraction), then by file size descending
+    # Filter out stub files (under 1KB) that are just metadata
+    def _sort_key(r):
+        size_str = r.filesize or "0"
+        try:
+            if "MB" in size_str:
+                size_val = float(size_str.replace("MB", "").strip())
+            elif "KB" in size_str:
+                size_val = float(size_str.replace("KB", "").strip()) / 1024
+            else:
+                size_val = 0
+        except ValueError:
+            size_val = 0
+        # EPUB gets priority (0), then PDF (1), then others (2)
+        fmt_priority = 0 if r.extension == "epub" else (1 if r.extension == "pdf" else 2)
+        # Within same format, prefer larger files (more likely to be real)
+        return (fmt_priority, -size_val)
+
+    sorted_results = sorted(results, key=_sort_key)
+
     return json.dumps({
         "results": [
             {
@@ -114,10 +142,11 @@ async def search_books(
                 "size": r.filesize,
                 "md5": r.md5,
             }
-            for r in results
+            for r in sorted_results
         ],
-        "count": len(results),
+        "count": len(sorted_results),
         "mirror": mirror,
+        "note": "Results sorted with EPUB first (best for text extraction), then PDF.",
     }, ensure_ascii=False)
 
 

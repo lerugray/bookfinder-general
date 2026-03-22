@@ -37,6 +37,11 @@ START.bat            # Windows launcher
 search_books, download_book, list_library, read_book, search_book_content,
 summarize_book, summarize_topic, save_book_summary, save_research_brief
 
+## EPUB Preference
+Search results are sorted with EPUB first. EPUBs are real text (HTML in a zip)
+and always extract cleanly. Large PDFs are often scanned images with no
+extractable text. The MCP server instructions tell calling LLMs to prefer EPUB.
+
 ## Running
 - Web: `python app.py` or `START.bat` → http://localhost:5000
 - MCP: `python -m bookfinder_general.mcp_server`

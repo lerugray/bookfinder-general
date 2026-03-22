@@ -35,7 +35,7 @@ Search query ──> Anna's Archive ──> Download ──> Extract text ──
 |---------|-------------|
 | **Search** | Query Anna's Archive in any language — titles, authors, ISBNs, topics |
 | **Download** | Automatic mirror fallback across LibGen, IPFS, and Anna's Archive mirrors |
-| **Extract** | Convert PDF/EPUB to clean Markdown preserving structure, tables, and headings |
+| **Extract** | Convert PDF/EPUB to clean Markdown preserving structure, tables, and headings. EPUBs preferred — always extractable, unlike scanned PDFs |
 | **Translate** | Auto-translate non-English books to English (optimized for AI readability) |
 | **Summarize** | Generate clean research summaries with [stop-slop](https://github.com/hardikpandya/stop-slop) rules — no AI-sounding prose |
 | **PDF Reports** | Polished documents with cover pages, typography, and proper formatting |
@@ -171,7 +171,7 @@ The tool automatically tries multiple mirrors (`.gd`, `.gl`, `.pk`) if one goes 
 
 ### Text Extraction
 
-[pymupdf4llm](https://github.com/pymupdf/RAG) converts PDFs to clean Markdown preserving document structure, tables, lists, and page boundaries. Supports PDF, EPUB, DJVU, and other ebook formats.
+Search results are automatically sorted with EPUB first — EPUBs are real text (HTML in a zip) and always extract cleanly, while large PDFs are often scanned images with no extractable text. [pymupdf4llm](https://github.com/pymupdf/RAG) converts PDFs and EPUBs to clean Markdown preserving document structure, tables, lists, and page boundaries. Files over 25MB skip extraction (likely scanned).
 
 ### Translation
 
