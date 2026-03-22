@@ -49,7 +49,7 @@ Search query ──> Anna's Archive ──> Download ──> Extract text ──
 ### Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/bookfinder-general.git
+git clone https://github.com/lerugray/bookfinder-general.git
 cd bookfinder-general
 pip install -r requirements.txt
 python -m playwright install chromium
@@ -151,6 +151,10 @@ Books are organized in `~/Research/BookFinder/` (configurable):
 ### Cloudflare Bypass
 
 Anna's Archive has no public API and uses bot protection. Bookfinder General uses [Playwright](https://playwright.dev/) to launch a real Chromium browser that handles the challenge automatically. A browser window will briefly appear during searches — this is expected.
+
+### Download Validation
+
+Every downloaded file is validated with magic byte checking (`%PDF` for PDFs, `PK` for EPUBs, etc.) to ensure you get real files, not HTML error pages or paywalls. If the fast API fails, the tool falls back to browser-based downloading through LibGen and other mirrors. The fast API also iterates multiple download servers and storage paths to find a working source.
 
 ### Mirror Rotation
 
