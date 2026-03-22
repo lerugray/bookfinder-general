@@ -232,8 +232,8 @@ async def _download_book_impl(
     if actual_ext:
         ext = actual_ext
 
-    # Step 4: Save to library with extraction and translation
-    logger.info(f"Step 4/4: Extracting text and saving '{display_title}' to library...")
+    # Step 4: Save to library — save the file first (fast), extract text after
+    logger.info(f"Step 4/4: Saving '{display_title}' to library...")
 
     def _do_save():
         return save_book(
@@ -246,19 +246,72 @@ async def _download_book_impl(
             filesize="",
             md5=md5,
             source_url=f"annas-archive/md5/{md5}",
-            extract_text=True,
-            translate=translate and bool(language) and language.lower() not in ("english", "en"),
+            extract_text=False,  # Don't extract yet — return fast
+            translate=False,
             project_dir=project_path if save_to_project else None,
         )
 
     try:
-        entry = await asyncio.wait_for(asyncio.to_thread(_do_save), timeout=300)
+        entry = await asyncio.wait_for(asyncio.to_thread(_do_save), timeout=60)
     except asyncio.TimeoutError:
-        logger.error("Text extraction timed out (300s)")
-        return json.dumps({"error": "Text extraction timed out. The book was downloaded but processing failed."})
+        logger.error("Save timed out (60s)")
+        return json.dumps({"error": "Saving to library timed out."})
     except Exception as e:
-        logger.error(f"Failed to process: {e}")
-        return json.dumps({"error": f"Failed to process book: {e}"})
+        logger.error(f"Failed to save: {e}")
+        return json.dumps({"error": f"Failed to save book: {e}"})
+
+    # Extract text in background — don't block the response
+    should_translate = translate and bool(language) and language.lower() not in ("english", "en")
+
+    def _do_extract():
+        try:
+            from .extractor import extract_to_markdown
+            original_path = os.path.join(entry.dir_path, entry.original_file)
+            content = extract_to_markdown(original_path)
+            if content:
+                header = f"# {entry.title}\n\n"
+                if author:
+                    header += f"**Author:** {author}\n"
+                if year:
+                    header += f"**Year:** {year}\n"
+                if language:
+                    header += f"**Language:** {language}\n"
+                header += f"\n---\n\n"
+
+                content_path = os.path.join(entry.dir_path, "content.md")
+                with open(content_path, "w", encoding="utf-8") as f:
+                    f.write(header + content)
+                entry.has_content = True
+
+                # Update metadata
+                from .library import _save_metadata
+                _save_metadata(entry)
+                logger.info(f"Text extraction complete for '{display_title}'")
+
+                # Translate if needed
+                if should_translate:
+                    from .translator import translate_text
+                    lang_map = {
+                        "german": "de", "french": "fr", "spanish": "es",
+                        "italian": "it", "portuguese": "pt", "russian": "ru",
+                        "dutch": "nl", "polish": "pl", "swedish": "sv",
+                        "czech": "cs", "latin": "la", "chinese": "zh-CN",
+                        "japanese": "ja",
+                    }
+                    source_lang = lang_map.get(language.lower(), "auto")
+                    translated_text = translate_text(header + content, source_lang=source_lang, target_lang="en")
+                    if translated_text:
+                        trans_path = os.path.join(entry.dir_path, "content_en.md")
+                        with open(trans_path, "w", encoding="utf-8") as f:
+                            f.write(translated_text)
+                        entry.has_translation = True
+                        _save_metadata(entry)
+                        logger.info(f"Translation complete for '{display_title}'")
+        except Exception as e:
+            logger.error(f"Background extraction failed: {e}")
+
+    # Fire and forget — extraction happens in background
+    asyncio.get_event_loop().run_in_executor(None, _do_extract)
 
     # Clean up temp file
     try:

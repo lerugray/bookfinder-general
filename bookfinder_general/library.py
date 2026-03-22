@@ -163,7 +163,8 @@ def save_book(
                 entry.has_content = True
         except Exception as e:
             # Log but don't fail — the original file is still saved
-            print(f"Warning: Text extraction failed: {e}")
+            import sys
+            print(f"[bookfinder] Text extraction failed: {e}", file=sys.stderr)
 
     # Translate if non-English
     if translate and entry.has_content and language and language.lower() not in ("english", "en"):
@@ -189,7 +190,8 @@ def save_book(
                     f.write(translated)
                 entry.has_translation = True
         except Exception as e:
-            print(f"Warning: Translation failed: {e}")
+            import sys
+            print(f"[bookfinder] Translation failed: {e}", file=sys.stderr)
 
     # Save metadata
     _save_metadata(entry)
