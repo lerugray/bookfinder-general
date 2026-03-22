@@ -108,6 +108,7 @@ async def download_book(
     author: str = "",
     year: str = "",
     language: str = "",
+    file_format: str = "pdf",
     save_to_project: bool = False,
     project_path: str = "",
     translate: bool = True,
@@ -124,6 +125,7 @@ async def download_book(
         author: Book author.
         year: Publication year.
         language: Book language (triggers translation if not English).
+        file_format: File format from search results (e.g. 'pdf', 'epub', 'azw3').
         save_to_project: If True, also saves a copy to the current project's
                          research/ folder.
         project_path: Path to the project directory (used with save_to_project).
@@ -135,7 +137,8 @@ async def download_book(
     try:
         return await _download_book_impl(
             md5=md5, title=title, author=author, year=year,
-            language=language, save_to_project=save_to_project,
+            language=language, file_format=file_format,
+            save_to_project=save_to_project,
             project_path=project_path, translate=translate,
         )
     except Exception as e:
@@ -145,7 +148,8 @@ async def download_book(
 
 async def _download_book_impl(
     md5: str, title: str, author: str, year: str,
-    language: str, save_to_project: bool, project_path: str, translate: bool,
+    language: str, file_format: str, save_to_project: bool,
+    project_path: str, translate: bool,
 ) -> str:
     from .download import try_download_from_links
     from .search import get_download_links
@@ -195,7 +199,7 @@ async def _download_book_impl(
 
     # Step 3: Download the file
     logger.info(f"Step 3/4: Downloading '{display_title}' ({len(links)} source(s))...")
-    ext = "pdf"  # Default extension
+    ext = file_format or "pdf"
     import tempfile
     temp_dir = tempfile.mkdtemp(prefix="bookfinder_")
 
