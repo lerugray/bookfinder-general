@@ -3,6 +3,7 @@
 import atexit
 import json
 import os
+import sys
 import threading
 
 from flask import Flask, jsonify, render_template, request
@@ -227,7 +228,7 @@ atexit.register(close_browser)
 
 
 if __name__ == "__main__":
-    print("\n  Bookfinder General is running!")
-    print(f"  Library: {LIBRARY_DIR}")
-    print("  Open your browser to: http://localhost:5000\n")
+    print("\n  Bookfinder General is running!", file=sys.stderr)
+    print(f"  Library: {LIBRARY_DIR}", file=sys.stderr)
+    print("  Open your browser to: http://localhost:5000\n", file=sys.stderr)
     app.run(debug=False, port=5000)

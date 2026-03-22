@@ -12,14 +12,14 @@ from bs4 import BeautifulSoup
 
 from .config import DOWNLOAD_DIR, HEADERS, MAX_RETRIES, REQUEST_TIMEOUT
 
-# Magic bytes for validating downloaded files
+# Magic bytes for validating downloaded files: (offset, expected_bytes)
 MAGIC_BYTES = {
-    "pdf": b"%PDF",
-    "epub": b"PK",       # EPUB is a ZIP container
-    "mobi": b"BOOKMOBI",
-    "djvu": b"AT&TFORM",
-    "cbz": b"PK",        # CBZ is also ZIP
-    "cbr": b"Rar",       # CBR is RAR
+    "pdf":  (0, b"%PDF"),
+    "epub": (0, b"PK"),        # EPUB is a ZIP container
+    "mobi": (60, b"BOOKMOBI"), # PalmDB header, MOBI magic at offset 60
+    "djvu": (0, b"AT&TFORM"),
+    "cbz":  (0, b"PK"),        # CBZ is also ZIP
+    "cbr":  (0, b"Rar"),       # CBR is RAR
 }
 
 
@@ -40,12 +40,15 @@ def _validate_file_bytes(filepath: str, extension: str) -> bool:
         print(f"[bookfinder] REJECT: File is HTML, not {extension}: {filepath}", file=sys.stderr)
         return False
 
-    # Positive check: verify expected magic bytes
-    expected = MAGIC_BYTES.get(extension.lower())
-    if expected and not head.startswith(expected):
-        print(f"[bookfinder] REJECT: Bad magic bytes for {extension} "
-              f"(got {head[:8]!r}, expected {expected!r}): {filepath}", file=sys.stderr)
-        return False
+    # Positive check: verify expected magic bytes at correct offset
+    check = MAGIC_BYTES.get(extension.lower())
+    if check:
+        offset, expected = check
+        actual = head[offset:offset + len(expected)]
+        if actual != expected:
+            print(f"[bookfinder] REJECT: Bad magic bytes for {extension} "
+                  f"(got {actual!r} at offset {offset}, expected {expected!r}): {filepath}", file=sys.stderr)
+            return False
 
     return True
 

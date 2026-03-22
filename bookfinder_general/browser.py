@@ -3,14 +3,26 @@
 All Playwright calls are pinned to a single dedicated thread to avoid
 greenlet 'Cannot switch to a different thread' errors when called from
 asyncio.to_thread() which dispatches to random pool threads.
+
+Playwright is optional — when ANNAS_KEY is set, most operations work
+without a browser. If Playwright is not installed, browser functions
+return empty results instead of crashing.
 """
 
+import atexit
+import os
 import re
+import sys
 import time
 import threading
 import concurrent.futures
 
-from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
+try:
+    from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+    sync_playwright = Browser = BrowserContext = Page = None
 
 from .config import AA_KEY, BROWSER_TIMEOUT, MIRRORS
 
@@ -23,14 +35,20 @@ _pw_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_
 _pw_lock = threading.Lock()
 
 
-def _get_browser_and_context() -> tuple[Browser, BrowserContext]:
+def _get_browser_and_context():
     """Get or create a persistent browser instance. Must run on the Playwright thread."""
     global _browser_instance, _context_instance
 
+    if not PLAYWRIGHT_AVAILABLE:
+        raise RuntimeError(
+            "Playwright is not installed. Run: pip install playwright && playwright install chromium"
+        )
+
     if _browser_instance is None or not _browser_instance.is_connected():
+        headless = os.environ.get("BOOKFINDER_HEADLESS", "true").lower() != "false"
         pw = sync_playwright().start()
         _browser_instance = pw.chromium.launch(
-            headless=False,
+            headless=headless,
             args=[
                 "--disable-blink-features=AutomationControlled",
             ],
@@ -187,7 +205,7 @@ def _browser_download_impl(url: str, download_dir: str, title: str, extension: s
 
 
 def close_browser():
-    """Clean up browser resources."""
+    """Clean up browser resources and executor thread."""
     global _browser_instance, _context_instance
 
     def _close():
@@ -210,3 +228,8 @@ def close_browser():
         future.result(timeout=10)
     except Exception:
         pass
+
+    _pw_executor.shutdown(wait=False)
+
+
+atexit.register(close_browser)

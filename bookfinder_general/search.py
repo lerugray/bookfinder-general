@@ -71,6 +71,13 @@ def search(
     if mirror is None:
         mirror = _find_working_mirror()
 
+    from .browser import PLAYWRIGHT_AVAILABLE
+    if not PLAYWRIGHT_AVAILABLE:
+        raise ConnectionError(
+            "Search requires Playwright (browser automation). "
+            "Install it with: pip install playwright && playwright install chromium"
+        )
+
     from .browser import search_page
 
     html = search_page(
@@ -288,12 +295,15 @@ def get_download_links(md5: str, mirror: str | None = None) -> list[dict]:
     # Only scrape detail page for fallback links if the fast API didn't give us a URL
     if not links:
         import sys
-        print(f"[bookfinder] No fast API link, scraping detail page for fallbacks...", file=sys.stderr)
-        from .browser import detail_page
-
-        html = detail_page(md5, mirror)
-        if html:
-            links.extend(_parse_download_links(html, mirror))
+        from .browser import PLAYWRIGHT_AVAILABLE
+        if PLAYWRIGHT_AVAILABLE:
+            print(f"[bookfinder] No fast API link, scraping detail page for fallbacks...", file=sys.stderr)
+            from .browser import detail_page
+            html = detail_page(md5, mirror)
+            if html:
+                links.extend(_parse_download_links(html, mirror))
+        else:
+            print(f"[bookfinder] No fast API link and Playwright not available — no fallback", file=sys.stderr)
 
     return links
 

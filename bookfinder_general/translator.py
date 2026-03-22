@@ -40,6 +40,7 @@ def translate_text(text: str, source_lang: str = "auto", target_lang: str = "en"
     chunks = _split_for_translation(text, max_chars=4500)
 
     translated_chunks = []
+    failed_count = 0
     for i, chunk in enumerate(chunks):
         # Skip chunks that are only markdown formatting / whitespace
         if not chunk.strip() or re.match(r"^[\s\-#=|>*`~\n]+$", chunk):
@@ -52,12 +53,23 @@ def translate_text(text: str, source_lang: str = "auto", target_lang: str = "en"
         except Exception:
             # If translation fails for a chunk, keep original
             translated_chunks.append(chunk)
+            failed_count += 1
 
         # Rate limiting — be polite to the free API
         if i < len(chunks) - 1:
             time.sleep(0.5)
 
-    return "\n\n".join(translated_chunks)
+    result_text = "\n\n".join(translated_chunks)
+
+    if failed_count > 0:
+        import sys
+        print(f"[bookfinder] Translation: {failed_count}/{len(chunks)} chunks failed", file=sys.stderr)
+        result_text += (
+            f"\n\n---\n_Note: {failed_count} of {len(chunks)} sections could not be "
+            f"translated and remain in the original language._"
+        )
+
+    return result_text
 
 
 def _split_for_translation(text: str, max_chars: int = 4500) -> list[str]:

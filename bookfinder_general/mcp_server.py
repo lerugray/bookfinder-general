@@ -15,7 +15,8 @@ from mcp.server.fastmcp import FastMCP
 logger = logging.getLogger("bookfinder-general")
 logging.basicConfig(
     level=logging.INFO,
-    format="[bookfinder] %(message)s",
+    format="[bookfinder %(asctime)s] %(message)s",
+    datefmt="%H:%M:%S",
     stream=sys.stderr,
 )
 
@@ -38,6 +39,25 @@ mcp = FastMCP(
         "and summarize_book to create clean research summaries with PDF reports."
     ),
 )
+
+
+def _validate_deps():
+    """Check optional dependencies at startup and log warnings."""
+    from .config import AA_KEY
+    from .browser import PLAYWRIGHT_AVAILABLE
+
+    if not PLAYWRIGHT_AVAILABLE:
+        logger.warning("Playwright not installed — browser search disabled, ANNAS_KEY required")
+    if not AA_KEY and not PLAYWRIGHT_AVAILABLE:
+        logger.error("Neither Playwright nor ANNAS_KEY available — search/download will not work")
+    if AA_KEY:
+        logger.info(f"ANNAS_KEY configured — fast downloads enabled")
+
+    for mod, name in [("pymupdf4llm", "PDF text extraction"), ("deep_translator", "translation")]:
+        try:
+            __import__(mod)
+        except ImportError:
+            logger.warning(f"{mod} not installed — {name} disabled")
 
 
 @mcp.tool()
@@ -81,7 +101,7 @@ async def search_books(
         return json.dumps({"error": f"Search failed: {e}"})
 
     if not results:
-        return json.dumps({"results": [], "message": "No results found. Try different search terms."})
+        return json.dumps({"results": [], "message": "No results found.", "suggestion": "Try broader search terms, search by author name, or try a different language."})
 
     return json.dumps({
         "results": [
@@ -193,7 +213,7 @@ async def _download_book_impl(
 
     if not links:
         logger.error("No download links found")
-        return json.dumps({"error": "No download links found for this book."})
+        return json.dumps({"error": "No download links found for this book.", "suggestion": "Try searching for a different edition or format (epub instead of pdf)."})
 
     logger.info(f"Found {len(links)} download link(s): {', '.join(l['source'] for l in links)}")
 
@@ -222,7 +242,7 @@ async def _download_book_impl(
 
     if not filepath:
         logger.error("Download failed — all sources unavailable")
-        return json.dumps({"error": "Download failed — all mirror sources were unavailable."})
+        return json.dumps({"error": "Download failed — all mirror sources were unavailable.", "suggestion": "Try a different format or search for another edition of this book."})
 
     file_size_mb = os.path.getsize(filepath) / (1024 * 1024)
     logger.info(f"Downloaded {file_size_mb:.1f}MB to temp")
@@ -521,6 +541,7 @@ def save_research_brief(
 
 def run_server():
     """Start the MCP server."""
+    _validate_deps()
     mcp.run()
 
 

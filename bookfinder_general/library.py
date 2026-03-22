@@ -56,7 +56,7 @@ def _slugify(text: str) -> str:
     text = re.sub(r"[^\w\s-]", "", text)
     text = re.sub(r"[\s_]+", "-", text)
     text = re.sub(r"-+", "-", text)
-    return text[:80].strip("-")
+    return text[:50].strip("-")
 
 
 def ensure_library() -> str:
@@ -71,8 +71,8 @@ def generate_book_id(title: str, author: str, md5: str) -> str:
     if author:
         author_slug = _slugify(author.split(",")[0].split(" ")[-1])  # Last name
         slug = f"{slug}-{author_slug}"
-    # Add short md5 suffix for uniqueness
-    slug = f"{slug}-{md5[:8]}"
+    # Add short md5 suffix for uniqueness, cap total length
+    slug = f"{slug[:60]}-{md5[:8]}"
     return slug
 
 
