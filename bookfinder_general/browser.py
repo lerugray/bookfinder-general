@@ -45,13 +45,12 @@ def _get_browser_and_context() -> tuple[Browser, BrowserContext]:
 def _wait_for_page_load(page: Page, timeout: int = BROWSER_TIMEOUT):
     """Wait for Cloudflare challenge to resolve and real content to load."""
     try:
-        # Wait for either the main content or a longer timeout
         page.wait_for_load_state("networkidle", timeout=timeout)
     except Exception:
         pass
 
-    # Check if we're still on a challenge page
-    for _ in range(30):  # up to 30 seconds extra
+    # Check if we're still on a challenge page — wait up to 15 seconds
+    for _ in range(15):
         content = page.content()
         if "Verifying" not in content and len(content) > 500:
             return True
@@ -70,8 +69,13 @@ def fetch_page(url: str) -> str:
         if _wait_for_page_load(page):
             return page.content()
         return ""
+    except Exception:
+        return ""
     finally:
-        page.close()
+        try:
+            page.close()
+        except Exception:
+            pass
 
 
 def search_page(query: str, mirror: str, lang: str = "", content: str = "",

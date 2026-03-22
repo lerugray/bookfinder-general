@@ -238,46 +238,51 @@ def _browser_download(
     download_dir: str,
 ) -> str | None:
     """Download a file using Playwright browser (handles Cloudflare, cookies, JS redirects)."""
+    page = None
     try:
         from .browser import _get_browser_and_context
-        import tempfile
 
         print(f"[bookfinder] Trying browser download: {url[:100]}", file=sys.stderr)
         _, context = _get_browser_and_context()
 
-        # Use a temporary download dir so Playwright can manage the download
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            page = context.new_page()
-            try:
-                # Start a download by navigating to the URL
-                with page.expect_download(timeout=120000) as download_info:
-                    page.goto(url, timeout=60000)
-                download = download_info.value
+        page = context.new_page()
 
-                # Save to a temp path first
-                suggested = download.suggested_filename
-                if suggested and "." in suggested:
-                    filename = sanitize_filename(suggested)
+        # Try to catch a download event — timeout quickly (30s) since if it's not
+        # a download link it'll just load an HTML page and we don't want to hang
+        try:
+            with page.expect_download(timeout=30000) as download_info:
+                page.goto(url, timeout=30000)
+            download = download_info.value
+
+            suggested = download.suggested_filename
+            if suggested and "." in suggested:
+                filename = sanitize_filename(suggested)
+            else:
+                filename = sanitize_filename(f"{title}.{extension}")
+
+            filepath = os.path.join(download_dir, filename)
+            download.save_as(filepath)
+
+            if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+                if _validate_file_bytes(filepath, extension):
+                    print(f"[bookfinder] Browser download OK: {filepath}", file=sys.stderr)
+                    return filepath
                 else:
-                    filename = sanitize_filename(f"{title}.{extension}")
+                    os.remove(filepath)
+                    print(f"[bookfinder] Browser download failed validation", file=sys.stderr)
 
-                filepath = os.path.join(download_dir, filename)
-                download.save_as(filepath)
+        except Exception as e:
+            # expect_download timed out — URL loaded a page instead of triggering download
+            print(f"[bookfinder] Browser: no download triggered ({e})", file=sys.stderr)
 
-                # Validate
-                if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-                    if _validate_file_bytes(filepath, extension):
-                        print(f"[bookfinder] Browser download OK: {filepath}", file=sys.stderr)
-                        return filepath
-                    else:
-                        os.remove(filepath)
-                        print(f"[bookfinder] Browser download failed validation", file=sys.stderr)
-            except Exception as e:
-                print(f"[bookfinder] Browser download error: {e}", file=sys.stderr)
-            finally:
-                page.close()
     except Exception as e:
         print(f"[bookfinder] Browser download setup error: {e}", file=sys.stderr)
+    finally:
+        if page:
+            try:
+                page.close()
+            except Exception:
+                pass
 
     return None
 
