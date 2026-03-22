@@ -6,10 +6,18 @@ Connect this server to Claude Code, Cursor, or any MCP-compatible AI tool.
 
 import asyncio
 import json
+import logging
 import os
 import sys
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+
+logger = logging.getLogger("bookfinder-general")
+logging.basicConfig(
+    level=logging.INFO,
+    format="[bookfinder] %(message)s",
+    stream=sys.stderr,
+)
 
 from .config import LIBRARY_DIR
 from .library import (
@@ -98,6 +106,7 @@ async def download_book(
     save_to_project: bool = False,
     project_path: str = "",
     translate: bool = True,
+    ctx: Context | None = None,
 ) -> str:
     """Download a book and process it for research use.
 
@@ -122,10 +131,23 @@ async def download_book(
     from .download import try_download_from_links
     from .search import get_download_links
 
-    # Check if already downloaded
+    display_title = title or md5[:12]
+
+    async def _progress(step: int, total: int, msg: str):
+        """Log progress and report via MCP if context available."""
+        logger.info(msg)
+        if ctx:
+            try:
+                await ctx.report_progress(step, total)
+            except Exception:
+                pass
+
+    # Step 1: Check if already downloaded
+    await _progress(0, 4, f"Checking library for '{display_title}'...")
     existing = [b for b in list_books() if b.md5 == md5]
     if existing:
         book = existing[0]
+        logger.info(f"Already in library: {book.id}")
         result = {
             "status": "already_downloaded",
             "book_id": book.id,
@@ -140,19 +162,26 @@ async def download_book(
             result["project_path"] = os.path.join(project_path, "research", book.id)
         return json.dumps(result)
 
-    # Get download links (runs sync Playwright in a thread)
+    # Step 2: Get download links
+    await _progress(1, 4, f"Finding download links for '{display_title}'...")
+
     def _get_links():
         return get_download_links(md5)
 
     try:
         links = await asyncio.to_thread(_get_links)
     except ConnectionError as e:
+        logger.error(f"Failed to get links: {e}")
         return json.dumps({"error": f"Could not get download links: {e}"})
 
     if not links:
+        logger.error("No download links found")
         return json.dumps({"error": "No download links found for this book."})
 
-    # Download the file (also uses browser, so run in thread)
+    logger.info(f"Found {len(links)} download link(s): {', '.join(l['source'] for l in links)}")
+
+    # Step 3: Download the file
+    await _progress(2, 4, f"Downloading '{display_title}' ({len(links)} source(s))...")
     ext = "pdf"  # Default extension
     import tempfile
     temp_dir = tempfile.mkdtemp(prefix="bookfinder_")
@@ -168,14 +197,20 @@ async def download_book(
     filepath = await asyncio.to_thread(_do_download)
 
     if not filepath:
+        logger.error("Download failed — all sources unavailable")
         return json.dumps({"error": "Download failed — all mirror sources were unavailable."})
+
+    file_size_mb = os.path.getsize(filepath) / (1024 * 1024)
+    logger.info(f"Downloaded {file_size_mb:.1f}MB to temp")
 
     # Detect actual extension from downloaded file
     actual_ext = os.path.splitext(filepath)[1].lstrip(".").lower()
     if actual_ext:
         ext = actual_ext
 
-    # Save to library with extraction and translation
+    # Step 4: Save to library with extraction and translation
+    await _progress(3, 4, f"Extracting text and saving '{display_title}' to library...")
+
     def _do_save():
         return save_book(
             filepath=filepath,
@@ -195,6 +230,7 @@ async def download_book(
     try:
         entry = await asyncio.to_thread(_do_save)
     except Exception as e:
+        logger.error(f"Failed to process: {e}")
         return json.dumps({"error": f"Failed to process book: {e}"})
 
     # Clean up temp file
@@ -203,6 +239,8 @@ async def download_book(
         os.rmdir(temp_dir)
     except Exception:
         pass
+
+    logger.info(f"Done! Book saved as '{entry.id}'")
 
     result = {
         "status": "downloaded",
