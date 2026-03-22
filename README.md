@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/witchfinder.png" alt="Witchfinder General woodcut, c. 1600s" width="300">
+
 # Bookfinder General
 
 **Search. Download. Extract. Translate. Summarize.**
