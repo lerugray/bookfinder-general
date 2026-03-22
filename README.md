@@ -51,8 +51,14 @@ Search query ──> Anna's Archive ──> Download ──> Extract text ──
 ```bash
 git clone https://github.com/lerugray/bookfinder-general.git
 cd bookfinder-general
-pip install -r requirements.txt
-python -m playwright install chromium
+pip install -e .
+```
+
+**Optional — browser-based search** (only needed if you don't have an `ANNAS_KEY`):
+
+```bash
+pip install -e ".[browser]"
+playwright install chromium
 ```
 
 ### Use
@@ -84,7 +90,10 @@ Add to your Claude Code settings:
     "bookfinder-general": {
       "command": "python",
       "args": ["-m", "bookfinder_general.mcp_server"],
-      "cwd": "/path/to/bookfinder-general"
+      "cwd": "/path/to/bookfinder-general",
+      "env": {
+        "ANNAS_KEY": "your_key_here"
+      }
     }
   }
 }
@@ -150,7 +159,7 @@ Books are organized in `~/Research/BookFinder/` (configurable):
 
 ### Cloudflare Bypass
 
-Anna's Archive has no public API and uses bot protection. Bookfinder General uses [Playwright](https://playwright.dev/) to launch a real Chromium browser that handles the challenge automatically. A browser window will briefly appear during searches — this is expected.
+Anna's Archive uses bot protection. With an `ANNAS_KEY`, downloads go through the fast API and don't need a browser at all. Without a key, [Playwright](https://playwright.dev/) launches a headless Chromium browser to handle Cloudflare challenges automatically. Set `BOOKFINDER_HEADLESS=false` if you need a visible browser window for debugging.
 
 ### Download Validation
 
@@ -178,12 +187,13 @@ Summaries use embedded [stop-slop](https://github.com/hardikpandya/stop-slop) ru
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `ANNAS_KEY` | Anna's Archive membership key for faster downloads | *(none)* |
+| `ANNAS_KEY` | Anna's Archive membership key (**recommended**) | *(none)* |
 | `BOOKFINDER_LIBRARY` | Path to your research library | `~/Research/BookFinder` |
+| `BOOKFINDER_HEADLESS` | Set to `false` for visible browser window | `true` |
 
-**Optional: Anna's Archive membership key**
+**Recommended: Anna's Archive membership key**
 
-Donating to Anna's Archive (~$5-20) gives you an API key for faster, headless downloads that don't require a browser window:
+Donating to Anna's Archive (~$5-20) gives you an API key for fast, browserless downloads. With a key, Playwright is not required at all:
 
 ```bash
 # Windows
