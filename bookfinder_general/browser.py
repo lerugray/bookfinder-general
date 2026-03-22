@@ -54,18 +54,23 @@ def _get_browser_and_context() -> tuple[Browser, BrowserContext]:
 
 
 def _wait_for_page_load(page: Page, timeout: int = BROWSER_TIMEOUT):
-    """Wait for Cloudflare challenge to resolve and real content to load."""
+    """Wait for page content to be available. Fast return once real content loads."""
     try:
-        page.wait_for_load_state("networkidle", timeout=timeout)
+        page.wait_for_load_state("domcontentloaded", timeout=timeout)
     except Exception:
         pass
 
-    # Check if we're still on a challenge page — wait up to 15 seconds
-    for _ in range(15):
+    # Quick check — if content is already there, return immediately
+    content = page.content()
+    if "Verifying" not in content and len(content) > 500:
+        return True
+
+    # Cloudflare challenge — wait up to 8 seconds max
+    for _ in range(8):
+        time.sleep(1)
         content = page.content()
         if "Verifying" not in content and len(content) > 500:
             return True
-        time.sleep(1)
 
     return len(page.content()) > 500
 
@@ -94,7 +99,7 @@ def fetch_page(url: str) -> str:
     Thread-safe: dispatches to the dedicated Playwright thread."""
     try:
         future = _pw_executor.submit(_fetch_page_impl, url)
-        return future.result(timeout=BROWSER_TIMEOUT / 1000 + 30)
+        return future.result(timeout=30)  # 30s hard cap
     except Exception:
         return ""
 
