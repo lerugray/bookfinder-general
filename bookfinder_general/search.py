@@ -285,12 +285,15 @@ def get_download_links(md5: str, mirror: str | None = None) -> list[dict]:
                 except Exception as e:
                     print(f"[bookfinder] Fast API exception: {e}", file=sys.stderr)
 
-    # Also get links from detail page via browser
-    from .browser import detail_page
+    # Only scrape detail page for fallback links if the fast API didn't give us a URL
+    if not links:
+        import sys
+        print(f"[bookfinder] No fast API link, scraping detail page for fallbacks...", file=sys.stderr)
+        from .browser import detail_page
 
-    html = detail_page(md5, mirror)
-    if html:
-        links.extend(_parse_download_links(html, mirror))
+        html = detail_page(md5, mirror)
+        if html:
+            links.extend(_parse_download_links(html, mirror))
 
     return links
 
