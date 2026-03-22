@@ -4,6 +4,7 @@ Provides AI assistants with tools to search, download, and read research books.
 Connect this server to Claude Code, Cursor, or any MCP-compatible AI tool.
 """
 
+import asyncio
 import json
 import os
 import sys
@@ -32,7 +33,7 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-def search_books(
+async def search_books(
     query: str,
     language: str = "",
     file_format: str = "",
@@ -53,13 +54,16 @@ def search_books(
     """
     from .search import search
 
-    try:
-        results, mirror = search(
+    def _do_search():
+        return search(
             query=query,
             lang=language,
             ext=file_format,
             content=content_type,
         )
+
+    try:
+        results, mirror = await asyncio.to_thread(_do_search)
     except ConnectionError as e:
         return json.dumps({"error": str(e)})
 
@@ -85,7 +89,7 @@ def search_books(
 
 
 @mcp.tool()
-def download_book(
+async def download_book(
     md5: str,
     title: str = "",
     author: str = "",
@@ -136,26 +140,32 @@ def download_book(
             result["project_path"] = os.path.join(project_path, "research", book.id)
         return json.dumps(result)
 
-    # Get download links
+    # Get download links (runs sync Playwright in a thread)
+    def _get_links():
+        return get_download_links(md5)
+
     try:
-        links = get_download_links(md5)
+        links = await asyncio.to_thread(_get_links)
     except ConnectionError as e:
         return json.dumps({"error": f"Could not get download links: {e}"})
 
     if not links:
         return json.dumps({"error": "No download links found for this book."})
 
-    # Download the file
+    # Download the file (also uses browser, so run in thread)
     ext = "pdf"  # Default extension
     import tempfile
     temp_dir = tempfile.mkdtemp(prefix="bookfinder_")
 
-    filepath = try_download_from_links(
-        links=links,
-        title=title or md5,
-        extension=ext,
-        download_dir=temp_dir,
-    )
+    def _do_download():
+        return try_download_from_links(
+            links=links,
+            title=title or md5,
+            extension=ext,
+            download_dir=temp_dir,
+        )
+
+    filepath = await asyncio.to_thread(_do_download)
 
     if not filepath:
         return json.dumps({"error": "Download failed — all mirror sources were unavailable."})
@@ -166,8 +176,8 @@ def download_book(
         ext = actual_ext
 
     # Save to library with extraction and translation
-    try:
-        entry = save_book(
+    def _do_save():
+        return save_book(
             filepath=filepath,
             title=title or "Unknown",
             author=author,
@@ -181,6 +191,9 @@ def download_book(
             translate=translate and bool(language) and language.lower() not in ("english", "en"),
             project_dir=project_path if save_to_project else None,
         )
+
+    try:
+        entry = await asyncio.to_thread(_do_save)
     except Exception as e:
         return json.dumps({"error": f"Failed to process book: {e}"})
 
