@@ -6,7 +6,7 @@
 
 **Search. Download. Extract. Translate. Summarize.**
 
-MCP server and research tool. Finds books on Anna's Archive, downloads them, pulls out the text, translates if needed, and writes up summaries. Point Claude at it and ask for a book.
+MCP server and research tool. Finds books on Anna's Archive, downloads them, pulls out the text, translates if needed, and writes summaries. Point Claude at it and ask for a book.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-compatible-00d4ff?style=flat-square)](https://modelcontextprotocol.io)
@@ -35,11 +35,11 @@ Search query ──> Anna's Archive ──> Download ──> Extract text ──
 
 | Feature | Description |
 |---------|-------------|
-| **Search** | Search Anna's Archive — titles, authors, ISBNs, any language |
+| **Search** | Search Anna's Archive by title, author, ISBN, language |
 | **Download** | Mirror fallback across LibGen, IPFS, Anna's Archive. Validates every file |
 | **Extract** | PDF/EPUB to Markdown. Prefers EPUBs (real text). OCR fallback for scans |
 | **Translate** | Non-English books auto-translated via Google Translate at download time |
-| **Summarize** | Research summaries with [stop-slop](https://github.com/hardikpandya/stop-slop) rules — reads like a person wrote it |
+| **Summarize** | Research summaries with [stop-slop](https://github.com/hardikpandya/stop-slop) rules so they read like a person wrote them |
 | **PDF Reports** | Cover pages, headings, page numbers. Proper typography |
 | **Topic Briefs** | Combine multiple books into one research brief |
 | **Library** | Organized collection with metadata, full-text search, git sync |
@@ -169,7 +169,7 @@ Books are organized in `~/Research/BookFinder/` (configurable):
 
 ### Cloudflare Bypass
 
-Anna's Archive sits behind Cloudflare. With an `ANNAS_KEY`, downloads go through their fast API — no browser needed. Without a key, [Playwright](https://playwright.dev/) drives a headless Chromium to get past the challenge. Set `BOOKFINDER_HEADLESS=false` if you need to see the browser window.
+Anna's Archive sits behind Cloudflare. With an `ANNAS_KEY`, downloads go through their fast API and no browser is needed. Without a key, [Playwright](https://playwright.dev/) drives a headless Chromium to get past the challenge. Set `BOOKFINDER_HEADLESS=false` if you need to see the browser window.
 
 ### Download Validation
 
@@ -181,7 +181,9 @@ Tries `.gd`, `.gl`, `.pk` mirrors in order. Domains rotate due to legal pressure
 
 ### Text Extraction
 
-Search results are sorted with EPUB first — EPUBs contain real text and always extract cleanly. Large PDFs are often scanned images. [pymupdf4llm](https://github.com/pymupdf/RAG) handles text-based PDFs and EPUBs. For scanned PDFs, install the optional `[ocr]` extra — [RapidOCR](https://github.com/RapidAI/RapidOCR) will automatically kick in when regular extraction comes back empty.
+Search results put EPUBs first. EPUBs are HTML in a zip file, so they always have real text regardless of file size. PDFs are a gamble: small ones usually have embedded text, large ones are often scanned page images with nothing to extract.
+
+[pymupdf4llm](https://github.com/pymupdf/RAG) handles text-based PDFs. [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) handles EPUBs, including non-standard formats that use `.xml` content files instead of `.xhtml`. For scanned PDFs, install the optional `[ocr]` extra and [RapidOCR](https://github.com/RapidAI/RapidOCR) kicks in when regular extraction comes back empty.
 
 ### Translation
 
@@ -200,7 +202,7 @@ Add `**/original.*` to `.gitignore` to keep the repo lightweight — only extrac
 
 ### Summary Generation
 
-Summaries run through embedded [stop-slop](https://github.com/hardikpandya/stop-slop) rules that strip out AI writing patterns. The output reads like a person wrote it. PDF reports via [fpdf2](https://py-pdf.github.io/fpdf2/) with cover pages, headings, and page numbers.
+Summaries run through embedded [stop-slop](https://github.com/hardikpandya/stop-slop) rules that strip out AI writing patterns so the output reads like a person wrote it. PDF reports use [fpdf2](https://py-pdf.github.io/fpdf2/) with cover pages, headings, and page numbers.
 
 ---
 
@@ -215,7 +217,7 @@ Summaries run through embedded [stop-slop](https://github.com/hardikpandya/stop-
 
 **Anna's Archive membership key** (recommended)
 
-A donation to Anna's Archive (~$5-20) gets you an API key. With it, downloads are fast and don't need Playwright at all:
+A donation to Anna's Archive (~$5-20) gets you an API key. Downloads go through their fast API and Playwright is not needed:
 
 ```bash
 # Windows
