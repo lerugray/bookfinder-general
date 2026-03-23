@@ -62,11 +62,22 @@ All Playwright calls go through `_pw_executor` (a single-thread ThreadPoolExecut
 `ctx.report_progress()` can hang if the client doesn't support it. We removed Context entirely. Log progress to stderr with `logger.info()` instead.
 
 ### Keep extraction under control
-- Files >25MB skip text extraction (likely scanned/image PDFs that hang pymupdf4llm)
+- PDFs >25MB skip text extraction (likely scanned/image PDFs that hang pymupdf4llm)
+- EPUBs are exempt from size limits (images inflate the zip but text is always small)
+- EPUB extractor must match `.xml` content files, not just `.xhtml/.html/.htm`
 - All async steps need `asyncio.wait_for()` timeouts
 - Every code path in MCP tools must return JSON, never raise unhandled exceptions
+
+### Search results need title relevance ranking
+Anna's Archive returns results ranked by its own algorithm, which often matches on author name or random words instead of the actual title. `search.py` re-ranks results using `_rank_by_relevance()` which scores by query-word overlap in the title. Without this, searching "Supplying War Van Creveld" returns a random Patton book, and "Guns of August Tuchman" returns a Chinese translation. Do not remove the re-ranking step.
 
 ### Dependencies
 - Playwright is optional — guarded by `PLAYWRIGHT_AVAILABLE` flag in `browser.py`
 - All versions pinned in `requirements.txt` and `pyproject.toml`
 - Don't add loose version ranges (`>=`) — pin exact versions (`==`)
+
+### Library and git sync
+- Library lives at `~/Research/BookFinder/` (configurable via `BOOKFINDER_LIBRARY`)
+- Private library repo at github.com/lerugray/bookfinder-library tracks extracted text only
+- `.gitignore` excludes `**/original.*` to keep originals out of git
+- `BOOKFINDER_SYNC=true` auto-commits after each download
