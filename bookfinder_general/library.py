@@ -142,9 +142,11 @@ def save_book(
         original_file=original_filename,
     )
 
-    # Extract text to markdown (skip files over 25MB — likely scanned/image PDFs)
+    # Extract text to markdown (skip large PDFs over 25MB — likely scanned images)
+    # EPUBs are always extractable regardless of size (images inflate the zip but text is separate)
     file_size_mb = os.path.getsize(original_dest) / (1024 * 1024)
-    if extract_text and file_size_mb > 25:
+    is_epub = original_dest.lower().endswith('.epub')
+    if extract_text and file_size_mb > 25 and not is_epub:
         import sys
         from .extractor import RAPIDOCR_AVAILABLE
         if RAPIDOCR_AVAILABLE:

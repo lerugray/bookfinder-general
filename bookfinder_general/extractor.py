@@ -85,13 +85,15 @@ def _extract_pdf_with_ocr(filepath: str) -> str:
 def _extract_epub(filepath: str) -> str:
     """Extract text from EPUB files."""
     import zipfile
-    from bs4 import BeautifulSoup
+    import warnings
+    from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+    warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
     text_parts = []
 
     with zipfile.ZipFile(filepath, "r") as zf:
         for name in zf.namelist():
-            if name.endswith((".xhtml", ".html", ".htm")):
+            if name.endswith((".xhtml", ".html", ".htm", ".xml")) and not name.endswith(("container.xml", "content.opf", ".opf")):
                 with zf.open(name) as f:
                     soup = BeautifulSoup(f.read(), "lxml")
 
