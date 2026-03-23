@@ -258,6 +258,8 @@ def try_download_from_links(
 
     ensure_download_dir(download_dir)
     browser_attempts = 0
+    consecutive_failures = 0
+    last_source = None
 
     for link in links:
         url = link["url"]
@@ -267,6 +269,16 @@ def try_download_from_links(
         if source.lower() in SKIP_SOURCES:
             print(f"[bookfinder] Skipping {source}: requires login", file=sys.stderr)
             continue
+
+        # Bail early if the same source keeps failing (e.g. all slow_download links 403)
+        if source == last_source:
+            consecutive_failures += 1
+            if consecutive_failures >= 3:
+                print(f"[bookfinder] Skipping remaining {source} links ({consecutive_failures} consecutive failures)", file=sys.stderr)
+                continue
+        else:
+            consecutive_failures = 0
+            last_source = source
 
         print(f"[bookfinder] Trying link: {source} — {url[:80]}", file=sys.stderr)
 
