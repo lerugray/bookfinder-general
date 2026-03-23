@@ -107,6 +107,12 @@ Add to your Claude Code settings:
 </tr>
 </table>
 
+#### Using from other projects
+
+The MCP config above goes in `.mcp.json` at the root of **each project** where you want bookfinder-general available. Claude Code reads the config on startup, so restart the extension (or VS Code) after adding it.
+
+You can also put the config in `~/.claude/.mcp.json` to make it available globally, but project-level configs are more reliable.
+
 Then ask Claude:
 
 > *"Find me books about 17th century star fort design"*
