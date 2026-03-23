@@ -112,7 +112,39 @@ def search(
         raise ConnectionError("Search failed on all mirrors.")
 
     results = _parse_search_results(html, mirror)
+    # Re-rank results by title relevance to the original query
+    results = _rank_by_relevance(results, query)
     return results, mirror
+
+
+def _rank_by_relevance(results: list[SearchResult], query: str) -> list[SearchResult]:
+    """Re-rank search results by how well the title matches the query."""
+    # Normalize query words (drop very short words like "of", "the", "and")
+    stop_words = {"the", "of", "and", "a", "an", "in", "to", "for", "by", "on", "at", "is", "it"}
+    query_words = [w.lower() for w in re.split(r'\W+', query) if w.lower() not in stop_words and len(w) > 1]
+
+    if not query_words:
+        return results
+
+    def score(r: SearchResult) -> float:
+        title_lower = r.title.lower()
+        author_lower = r.author.lower() if r.author else ""
+        combined = title_lower + " " + author_lower
+
+        # Count how many query words appear in title+author
+        matches = sum(1 for w in query_words if w in combined)
+        match_ratio = matches / len(query_words) if query_words else 0
+
+        # Bonus for consecutive word matches (phrase matching)
+        query_phrase = " ".join(query_words)
+        phrase_bonus = 0.3 if query_phrase in combined else 0
+
+        # Penalty for non-English results when query is in English
+        lang_penalty = 0.2 if r.language and r.language != "English" else 0
+
+        return match_ratio + phrase_bonus - lang_penalty
+
+    return sorted(results, key=score, reverse=True)
 
 
 def _parse_search_results(html: str, mirror: str) -> list[SearchResult]:
