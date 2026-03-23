@@ -6,7 +6,7 @@
 
 **Search. Download. Extract. Translate. Summarize.**
 
-MCP server and research tool. Finds books on Anna's Archive, downloads them, pulls out the text, translates if needed, and writes summaries. Point Claude at it and ask for a book.
+MCP server and research tool. Finds books on Anna's Archive, downloads them, pulls out the text, translates if needed, and writes summaries. Works with any MCP-compatible AI tool (Claude Code, Cursor, Windsurf, Continue.dev, and others).
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-compatible-00d4ff?style=flat-square)](https://modelcontextprotocol.io)
@@ -86,7 +86,7 @@ Opens at [localhost:5000](http://localhost:5000).
 
 #### MCP Server
 
-Add to your Claude Code settings:
+Add to your MCP settings (`.mcp.json` in your project root):
 
 ```json
 {
@@ -109,11 +109,11 @@ Add to your Claude Code settings:
 
 #### Using from other projects
 
-The MCP config above goes in `.mcp.json` at the root of **each project** where you want bookfinder-general available. Claude Code reads the config on startup, so restart the extension (or VS Code) after adding it.
+The MCP config above goes in `.mcp.json` at the root of **each project** where you want bookfinder-general available. Your MCP client reads the config on startup, so restart it after adding the file.
 
-You can also put the config in `~/.claude/.mcp.json` to make it available globally, but project-level configs are more reliable.
+For Claude Code, you can also put the config in `~/.claude/.mcp.json` to make it globally available. Other MCP clients have their own global config locations.
 
-Then ask Claude:
+Then ask your AI:
 
 > *"Find me books about 17th century star fort design"*
 >
@@ -238,7 +238,7 @@ export ANNAS_KEY=your_key_here
 | OCR | [RapidOCR](https://github.com/RapidAI/RapidOCR) | Scanned PDF fallback (optional) |
 | Translation | [deep-translator](https://github.com/nidhaloff/deep-translator) | Google Translate |
 | PDF Reports | [fpdf2](https://py-pdf.github.io/fpdf2/) | Summary PDF generation |
-| MCP Server | [MCP SDK](https://modelcontextprotocol.io/) | AI assistant integration |
+| MCP Server | [MCP SDK](https://modelcontextprotocol.io/) | Works with any MCP client |
 | Web UI | [Flask](https://flask.palletsprojects.com/) | Browser interface |
 | CLI | [Rich](https://github.com/Textualize/rich) | Terminal interface |
 | Parsing | [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) | HTML parsing |
