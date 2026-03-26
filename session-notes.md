@@ -1,6 +1,28 @@
 # Session Notes
 
-## 2026-03-25 — MCP startup fix (two rounds)
+## 2026-03-25 — MCP portability overhaul
+
+### Cross-machine portability fixes
+The root problem: hardcoded absolute paths in `.mcp.json` broke every time
+switching between home (rweis) and work (different username) machines.
+
+**What changed:**
+- `.mcp.json` now uses `"python" + "-m bookfinder_general.mcp_server"` — no
+  absolute paths, no `cwd`. Works on any machine with `pip install -e .`
+- PIH's `.mcp.json` gitignored (machine-specific config shouldn't be tracked)
+- `ANNAS_KEY` moved to `~/.claude/settings.json` env block (per-machine,
+  auto-injected into all MCP servers, no more putting it in repo files)
+- Key scrubbed from entire git history with git-filter-repo + force-push
+- `pyproject.toml` build-backend fixed (`setuptools.build_meta`)
+- Added `mcp__bookfinder-general__*` to permissions allow list for don't-ask mode
+- README updated with portable setup instructions
+
+### Per-machine one-time setup
+1. `git clone` + `pip install -e .`
+2. Tell Claude: "Add ANNAS_KEY to my Claude settings.json env. The key is [key]"
+3. Tell Claude: "Add mcp__bookfinder-general__* to my permissions allow list"
+
+### MCP startup fix (two rounds)
 
 ### Issue (round 1)
 BookFinder General MCP server failed to load — `python` not found in PATH when
