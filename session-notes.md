@@ -1,19 +1,24 @@
 # Session Notes
 
-## 2026-03-25 — MCP startup fix
+## 2026-03-25 — MCP startup fix (two rounds)
 
-### Issue
-BookFinder General MCP server failed to load on Claude Code startup (notification
-in bottom-right corner). Server worked fine when run manually from terminal.
+### Issue (round 1)
+BookFinder General MCP server failed to load — `python` not found in PATH when
+Claude Code spawns the subprocess. Fixed by using full path `C:\Python314\python.exe`.
 
-### Root Cause
-The `.mcp.json` in the PIH project used bare `"python"` as the command. When Claude
-Code spawns MCP server subprocesses, PATH may not resolve the same way as the user's
-shell, so `python` could fail to find `C:\Python314\python.exe`.
+### Issue (round 2)
+Server still not connecting. Server itself works fine (stdio transport, proper
+handshake, all 9 tools advertised). Real root cause: `.mcp.json` had **unescaped
+Windows backslashes** in JSON strings. `\b` was parsed as backspace, `\r` as
+carriage return, etc. — garbling the command and cwd paths before they reached
+the OS.
 
 ### Fix
-Changed `.mcp.json` command from `"python"` to `"C:\\Python314\\python.exe"` (full
-path). File is in `C:\Users\rweis\OneDrive\Documents\PIH\.mcp.json`.
+Changed paths in `.mcp.json` from backslashes to forward slashes:
+- `"C:\\Python314\\python.exe"` → `"C:/Python314/python.exe"`
+- `"C:\\Users\\rweis\\OneDrive\\Documents\\bookfinder-general"` → `"C:/Users/rweis/OneDrive/Documents/bookfinder-general"`
+
+Windows accepts forward slashes in paths, and they don't need JSON escaping.
 
 ### Other Notes
 - Python 3.14.3 installed at C:\Python314
