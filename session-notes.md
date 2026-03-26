@@ -134,7 +134,7 @@ Without text (scanned/too large):
 - SPI "Wargame Design" (1977) — confirmed not on Anna's Archive, physical only
 
 ### API Status
-ANNAS_KEY: REDACTED_KEY
+ANNAS_KEY: stored in Claude memory and ~/.claude/settings.json (not in repo)
 Downloads used today: ~17, daily limit: 50
 
 ### Key Technical Decisions

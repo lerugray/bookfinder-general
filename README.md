@@ -59,11 +59,13 @@ pip install -e .
 **Optional extras:**
 
 ```bash
-pip install -e ".[browser]"    # Browser search (only needed without ANNAS_KEY)
+pip install -e ".[browser]"    # Browser automation (needed for search — Cloudflare bypass)
 playwright install chromium
 
 pip install -e ".[ocr]"        # OCR for scanned PDFs (RapidOCR)
 ```
+
+> **Note:** Playwright is required for searching Anna's Archive (Cloudflare protection). An `ANNAS_KEY` lets you skip Playwright for *downloads* but not for search.
 
 ### Use
 
@@ -86,32 +88,48 @@ Opens at [localhost:5000](http://localhost:5000).
 
 #### MCP Server
 
-Add to your MCP settings (`.mcp.json` in your project root):
+After `pip install -e .`, bookfinder-general is available system-wide. Add to `.mcp.json` in any project:
 
 ```json
 {
   "mcpServers": {
     "bookfinder-general": {
       "command": "python",
-      "args": ["-m", "bookfinder_general.mcp_server"],
-      "cwd": "/path/to/bookfinder-general",
-      "env": {
-        "ANNAS_KEY": "your_key_here"
-      }
+      "args": ["-m", "bookfinder_general.mcp_server"]
     }
   }
 }
 ```
 
+No `cwd` needed — the package is installed, so `python -m` works from anywhere.
+
 </td>
 </tr>
 </table>
 
-#### Using from other projects
+#### Setting your API key
 
-The MCP config above goes in `.mcp.json` at the root of **each project** where you want bookfinder-general available. Your MCP client reads the config on startup, so restart it after adding the file.
+Set `ANNAS_KEY` as an environment variable so it's available everywhere:
 
-For Claude Code, you can also put the config in `~/.claude/.mcp.json` to make it globally available. Other MCP clients have their own global config locations.
+```bash
+# Linux/Mac — add to ~/.bashrc or ~/.zshrc
+export ANNAS_KEY=your_key_here
+
+# Windows — set permanently
+setx ANNAS_KEY your_key_here
+```
+
+For Claude Code specifically, add it to `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "ANNAS_KEY": "your_key_here"
+  }
+}
+```
+
+This injects the key into all MCP server processes automatically — no need to put it in every `.mcp.json`.
 
 Then ask your AI:
 
@@ -217,7 +235,7 @@ Summaries run through embedded [stop-slop](https://github.com/hardikpandya/stop-
 
 **Anna's Archive membership key** (recommended)
 
-A donation to Anna's Archive (~$5-20) gets you an API key. Downloads go through their fast API and Playwright is not needed:
+A donation to Anna's Archive (~$5-20) gets you an API key. Downloads go through their fast API instead of scraping download pages (Playwright is still needed for search):
 
 ```bash
 # Windows
