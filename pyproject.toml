@@ -24,6 +24,10 @@ dependencies = [
 [project.optional-dependencies]
 browser = ["playwright==1.58.0"]
 ocr = ["rapidocr-onnxruntime>=1.3.0"]
+test = [
+    "pytest==8.4.1",
+    "ruff==0.15.11",
+]
 
 [project.scripts]
 bookfinder-mcp = "bookfinder_general.mcp_server:run_server"
@@ -33,3 +37,27 @@ Homepage = "https://github.com/lerugray/bookfinder-general"
 
 [tool.setuptools.packages.find]
 include = ["bookfinder_general*"]
+
+# Ruff config — added in bf-001 alongside pytest wiring. The existing
+# bookfinder_general/ modules predate this lint gate and carry
+# residual F401 / F541 / E402 / E741 / E731 / F811 issues. The per-file
+# ignores below hold the line without widening bf-001 into lint
+# cleanup: new code in tests/ must pass the full ruleset, and when a
+# future task does targeted cleanup on one of the listed files it
+# should remove that file's entry here at the same time.
+[tool.ruff.lint]
+# Ruff default ruleset — E4 (imports), E7 (whitespace semantics),
+# E9 (runtime errors), F (pyflakes). Deliberately excludes E501
+# (line-too-long) because existing modules have long lines that
+# reformatting would require touching hands_off code to clear.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"bookfinder_general/browser.py" = ["F401", "F541", "F811"]
+"bookfinder_general/cli.py" = ["F401"]
+"bookfinder_general/download.py" = ["F401", "F541"]
+"bookfinder_general/library.py" = ["F401", "F541"]
+"bookfinder_general/mcp_server.py" = ["E402", "E731", "E741", "F401", "F541"]
+"bookfinder_general/pdf_generator.py" = ["F401"]
+"bookfinder_general/search.py" = ["E741", "F401", "F541"]
+"bookfinder_general/summarizer.py" = ["F401"]
