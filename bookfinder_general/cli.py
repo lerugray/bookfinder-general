@@ -18,12 +18,25 @@ console = Console()
 
 
 def print_banner():
+    """Print the Bookfinder General header panel to the console.
+
+    Returns:
+        None. Output is written to the module-level ``console``.
+    """
     banner = Text("Bookfinder General", style="bold cyan")
     console.print(Panel(banner, subtitle="Search & Download Research Books", border_style="cyan"))
 
 
 def print_results_table(results: list[SearchResult]):
-    """Display search results in a formatted table."""
+    """Display search results in a formatted table.
+
+    Args:
+        results: List of ``SearchResult`` rows to render. An empty list
+            produces an empty table (no error).
+
+    Returns:
+        None. The table is written to the module-level ``console``.
+    """
     table = Table(show_header=True, header_style="bold magenta", show_lines=True)
     table.add_column("#", style="dim", width=4, justify="right")
     table.add_column("Title", min_width=30, max_width=50)
@@ -48,7 +61,30 @@ def print_results_table(results: list[SearchResult]):
 
 
 def do_search(mirror_hint: str | None = None) -> tuple[list[SearchResult], str | None]:
-    """Run a search and return results."""
+    """Prompt the user for a query, run the search, and render results.
+
+    Interactively collects a query string and optional filters
+    (content type, file extension, language), then calls
+    :func:`bookfinder_general.search.search` and prints the hits via
+    :func:`print_results_table`.
+
+    Args:
+        mirror_hint: Preferred Anna's Archive mirror suffix (for example
+            ``"gd"``) to reuse from a previous successful call, or
+            ``None`` to let the search layer pick one. On a failed
+            search the hint is preserved; on a connection error it is
+            cleared so the next attempt re-probes mirrors.
+
+    Returns:
+        A ``(results, mirror)`` tuple. ``results`` is the list of
+        ``SearchResult`` objects (possibly empty). ``mirror`` is the
+        mirror suffix that actually served the request, or the incoming
+        ``mirror_hint`` / ``None`` if no search was executed.
+
+    Raises:
+        Does not raise. ``ConnectionError`` from the search layer is
+        caught and reported to the console.
+    """
     query = Prompt.ask("\n[bold cyan]Search query[/]")
     if not query.strip():
         console.print("[yellow]Empty query, try again.[/]")
@@ -94,7 +130,30 @@ def do_search(mirror_hint: str | None = None) -> tuple[list[SearchResult], str |
 
 
 def do_download(results: list[SearchResult], mirror: str | None):
-    """Handle downloading a selected result."""
+    """Prompt the user to pick results and download them with progress.
+
+    Asks for a comma-separated selection (or ``"all"``) and a target
+    directory, resolves download links via
+    :func:`bookfinder_general.search.get_download_links`, then streams
+    each file with :func:`bookfinder_general.download.try_download_from_links`
+    while rendering a Rich progress bar.
+
+    Args:
+        results: The list of ``SearchResult`` rows produced by the most
+            recent :func:`do_search` call. An empty list short-circuits
+            with a warning.
+        mirror: Mirror suffix to reuse when fetching download links, or
+            ``None`` to let the search layer choose.
+
+    Returns:
+        None. Progress, errors, and final filepaths are written to the
+        module-level ``console``.
+
+    Raises:
+        Does not raise. ``ConnectionError`` while fetching links and
+        ``ValueError`` from bad selection parsing are caught and
+        reported to the console.
+    """
     if not results:
         console.print("[yellow]No results to download from. Run a search first.[/]")
         return
@@ -178,7 +237,24 @@ def do_download(results: list[SearchResult], mirror: str | None):
 
 
 def main():
-    """Main CLI loop."""
+    """Run the interactive Bookfinder CLI until the user quits.
+
+    Prints the banner, reports whether an ``ANNAS_KEY`` membership key
+    is set, then enters a prompt loop offering search (``s``), download
+    (``d``), repeat-last-results (``r``), and quit (``q``). The loop
+    keeps the most recent results and mirror in memory so ``d`` / ``r``
+    can reuse them.
+
+    Returns:
+        None. Exits normally on ``q`` or when stdin closes. On exit the
+        shared Playwright browser is closed via
+        :func:`bookfinder_general.browser.close_browser`.
+
+    Raises:
+        Does not raise for expected flow. ``KeyboardInterrupt`` and
+        other unexpected exceptions propagate to the caller after the
+        ``finally`` block closes the browser.
+    """
     print_banner()
 
     from .config import AA_KEY

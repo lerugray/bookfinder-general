@@ -4,6 +4,8 @@ Manages downloaded books in a structured library with metadata,
 extracted text, and translations.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -11,8 +13,19 @@ import shutil
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import TypedDict
 
 from .config import LIBRARY_DIR
+
+
+class SearchHit(TypedDict):
+    """One book's match from :func:`search_library`."""
+
+    book_id: str
+    title: str
+    author: str
+    file: str
+    excerpts: list[str]
 
 
 @dataclass
@@ -77,7 +90,7 @@ def generate_book_id(title: str, author: str, md5: str) -> str:
 
 
 def save_book(
-    filepath: str,
+    filepath: Path,
     title: str,
     author: str,
     year: str,
@@ -88,7 +101,7 @@ def save_book(
     source_url: str,
     extract_text: bool = True,
     translate: bool = True,
-    project_dir: str | None = None,
+    project_dir: Path | None = None,
 ) -> BookEntry:
     """
     Save a downloaded book to the research library.
@@ -215,14 +228,14 @@ def save_book(
     return entry
 
 
-def _save_metadata(entry: BookEntry):
+def _save_metadata(entry: BookEntry) -> None:
     """Save book metadata to JSON."""
     data = asdict(entry)
     with open(entry.metadata_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def _copy_to_project(entry: BookEntry, project_dir: str):
+def _copy_to_project(entry: BookEntry, project_dir: Path) -> None:
     """Copy book files to a project's research directory."""
     dest_dir = os.path.join(project_dir, "research", entry.id)
     os.makedirs(dest_dir, exist_ok=True)
@@ -309,13 +322,13 @@ def get_book_content(book_id: str, translated: bool = False, max_chars: int = 0)
         return None
 
 
-def search_library(query: str, max_results: int = 10) -> list[dict]:
+def search_library(query: str, max_results: int = 10) -> list[SearchHit]:
     """
     Full-text search across all books in the library.
 
     Returns matching excerpts with context.
     """
-    results = []
+    results: list[SearchHit] = []
     query_lower = query.lower()
 
     for book in list_books():
