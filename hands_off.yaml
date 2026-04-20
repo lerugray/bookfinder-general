@@ -1,0 +1,60 @@
+# Hands-off patterns — autonomous bot will refuse to modify these.
+# Format: each entry is a glob-like pattern (basename or path).
+# Rule 5 requires this list be non-empty before registration.
+#
+# Mirrors the authoritative list in GeneralStaff's projects.yaml
+# §bookfinder-general. Keep the two in sync by convention — any
+# change here must also land in projects.yaml and vice versa. The
+# duplicated-source design is deliberate: the local file is a
+# second line of defense in case a future dispatcher bug mis-reads
+# projects.yaml, and it's also the natural place for a local
+# Claude Code session to look when asked "what's off-limits?"
+#
+# "Why" for each pattern is in CLAUDE-AUTONOMOUS.md §Hands-off
+# surface.
+
+patterns:
+  # Project vision + strategy (taste work)
+  - "CLAUDE.md"                         # load-bearing rules
+  - "CLAUDE-AUTONOMOUS.md"              # bot-scope contract (this file is upstream)
+  - "README.md"                         # user-facing copy — voice-sensitive
+  - "LICENSE"
+  - ".claude/"                          # claude code config
+  - ".mcp.json"
+  - "session-notes.md"                  # Ray's personal notes
+
+  # Bot scope rules (bot can't edit its own scope)
+  - "hands_off.yaml"
+
+  # Bot infrastructure (launcher)
+  - "engineer_command.sh"
+  - "START.bat"
+
+  # Dependency-pinning discipline (CLAUDE.md: strict == pinning)
+  - "pyproject.toml"
+  - "requirements.txt"
+
+  # Entrypoints the bot shouldn't silently reshape
+  - "app.py"
+  - "main.py"
+
+  # Load-bearing modules with CLAUDE.md critical rules:
+  #   browser.py:   Playwright on a dedicated thread — deadlock if violated
+  #   mcp_server.py: stdout = JSON-RPC — no stray print()
+  #   summarizer.py: stop-slop rules embedded
+  #   search.py:     relevance-ranking step, load-bearing for quality
+  - "bookfinder_general/browser.py"
+  - "bookfinder_general/mcp_server.py"
+  - "bookfinder_general/summarizer.py"
+  - "bookfinder_general/search.py"
+
+  # Secrets + build artifacts
+  - ".env"
+  - ".env.local"
+  - ".venv/"
+  - "bookfinder_general.egg-info/"
+  - "__pycache__/"
+  - "*.pyc"
+  - ".pytest_cache/"
+  - "dist/"
+  - "build/"
