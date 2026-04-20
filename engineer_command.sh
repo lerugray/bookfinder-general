@@ -151,6 +151,9 @@ out. After committing one task, do NOT pick another in the same
 invocation — the dispatcher starts a fresh cycle for the next task.
 " \
   --allowedTools "Read,Write,Edit,Bash,Grep,Glob" \
+  --dangerously-skip-permissions \
+  --mcp-config '{"mcpServers":{}}' \
+  --strict-mcp-config \
   --output-format text
 
 echo ""
