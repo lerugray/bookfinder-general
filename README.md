@@ -24,6 +24,20 @@ MCP server and research tool. Finds books on Anna's Archive, downloads them, pul
 
 ---
 
+## Why Bookfinder exists
+
+Three specific failures prompted this tool.
+
+First, Anna's Archive's relevance algorithm matches on author names and incidental keywords as often as on the actual title. Searching "Supplying War Van Creveld" returns an unrelated Patton book on the first page. Searching "Guns of August Tuchman" returns a Chinese translation of something else. Fine if you already know the MD5. Painful if you don't. Bookfinder re-ranks results by query-word overlap in the title before handing them back, so the book you asked for is the book you get.
+
+Second, most PDFs on Anna's Archive are scanned images, not extractable text. `pymupdf4llm` will happily chew on a 40MB image PDF for an hour and return nothing useful. EPUBs, by contrast, are HTML in a zip: they always extract cleanly. So Bookfinder sorts search results EPUB-first, skips text extraction on PDFs over 25MB by default, and the MCP server's tool descriptions tell the calling model to prefer EPUB. Nothing clever; just avoiding the trap.
+
+Third, LLM summaries of non-fiction default to a recognizable boilerplate: "delve into," "it's worth noting," "navigate the complexities." The summarizer ships with [stop-slop](https://github.com/hardikpandya/stop-slop) rules baked into the prompt, which strip most of the obvious tells. Summaries still read like summaries, but they read less like an LLM wrote them.
+
+Bookfinder doesn't do anything Anna's Archive, `pymupdf4llm`, and an LLM can't do on their own. It does the glue work: right result, clean text, readable prose. The MCP server exposes nine tools so any MCP-compatible client can call any step directly, or the whole pipeline end-to-end.
+
+---
+
 ## What It Does
 
 ```
