@@ -34,5 +34,10 @@ research/
 .env
 *.key
 
-# Claude Code
-.claude/
+# Claude Code — track SKILLs cross-machine, keep per-machine settings local
+.claude/*
+!.claude/skills/
+
+# Claude Design artifacts (preview app + zip) — local reference, not repo content
+claude-design-output/
+bookfindergeneral.zip
