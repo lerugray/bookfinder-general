@@ -3,6 +3,13 @@
     "bookfinder-general": {
       "command": "python",
       "args": ["-m", "bookfinder_general.mcp_server"]
+    },
+    "raybrain": {
+      "command": "node",
+      "args": ["C:/Users/rweis/OneDrive/Documents/raybrain/mcp-server/dist/index.js"],
+      "env": {
+        "RAYBRAIN_BIN": "C:/Users/rweis/OneDrive/Documents/raybrain/.venv/Scripts/raybrain.exe"
+      }
     }
   }
 }
