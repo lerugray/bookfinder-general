@@ -41,3 +41,6 @@ research/
 # Claude Design artifacts (preview app + zip) — local reference, not repo content
 claude-design-output/
 bookfindergeneral.zip
+
+# GS state mirror junction (canonical state in generalstaff-private/)
+state/
