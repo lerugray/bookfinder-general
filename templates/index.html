@@ -4,314 +4,783 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bookfinder General</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        /* ── RESET ── */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #e0e0e0;
-            min-height: 100vh;
+
+        /* ── PALETTE ──
+           bg-primary:    #0d0d10  — dim reading room
+           bg-raised:     #141418  — panels, search box
+           bg-inset:      #0a0a0d  — inputs, code blocks
+           border-dim:    #222228  — hair-line rules
+           border-mid:    #2e2e38  — field borders
+           text-primary:  #e8e4d8  — parchment white
+           text-secondary:#8a8474  — metadata, labels
+           text-dim:      #55524a  — very dim hints
+           accent:        #c8a25a  — amber/ochre; focus, active, download
+           accent-hover:  #d4b06a  — amber hover
+           accent-dim:    #7a6233  — dim amber for markers
+           error:         #a04848  — iron oxide red
+           success:       #6b8e4a  — manuscript green
+        */
+
+        /* ── BASE ── */
+        html, body {
+            height: 100%;
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0d0d10;
+            color: #e8e4d8;
+            font-size: 14px;
+            line-height: 1.45;
         }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
 
-        header { text-align: center; padding: 30px 0 10px; }
-        header h1 { font-size: 2.2em; color: #00d4ff; margin-bottom: 6px; }
-        header p { color: #888; font-size: 1em; }
+        /* ── LAYOUT ── */
+        .layout {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
 
-        /* Tabs */
+        /* ── HEADER ── */
+        header {
+            padding: 18px 0 0;
+            border-bottom: 1px solid #222228;
+            margin-bottom: 0;
+        }
+        .header-top {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding-bottom: 10px;
+        }
+        .wordmark {
+            font-family: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+            font-size: 1.55em;
+            font-weight: 700;
+            color: #e8e4d8;
+            letter-spacing: 0.01em;
+            line-height: 1;
+        }
+        .tagline {
+            font-family: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.8em;
+            color: #8a8474;
+            font-weight: 400;
+            display: block;
+            margin-top: 3px;
+            letter-spacing: 0.01em;
+        }
+        .header-status {
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 11px;
+            color: #55524a;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* ── TABS ── */
         .tabs {
             display: flex;
             gap: 0;
-            margin: 20px 0 0;
-            border-bottom: 2px solid #2a2a4a;
+            margin-top: 0;
         }
         .tab {
-            padding: 12px 24px;
-            font-size: 15px;
+            padding: 8px 18px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
             background: none;
             border: none;
-            color: #888;
-            cursor: pointer;
             border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.2s;
+            color: #8a8474;
+            cursor: pointer;
+            margin-bottom: -1px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            transition: color 100ms linear, border-color 100ms linear;
         }
-        .tab:hover { color: #ccc; }
-        .tab.active { color: #00d4ff; border-bottom-color: #00d4ff; }
+        .tab:hover { color: #e8e4d8; }
+        .tab.active { color: #c8a25a; border-bottom-color: #c8a25a; }
 
+        /* ── MAIN ── */
+        main { flex: 1; padding-top: 16px; padding-bottom: 40px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Search */
+        /* ── SEARCH BOX ── */
         .search-box {
-            background: #16213e;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid #2a2a4a;
+            background: #141418;
+            border: 1px solid #222228;
+            border-radius: 2px;
+            padding: 12px;
+            margin-bottom: 16px;
         }
-        .search-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .search-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
         .search-row input[type="text"] {
-            flex: 1; padding: 12px 16px; font-size: 15px;
-            border: 2px solid #2a2a4a; border-radius: 8px;
-            background: #0f0f23; color: #e0e0e0; outline: none;
+            flex: 1;
+            padding: 8px 10px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 14px;
+            border: 1px solid #2e2e38;
+            border-radius: 2px;
+            background: #0a0a0d;
+            color: #e8e4d8;
+            outline: none;
+            transition: border-color 100ms linear;
         }
-        .search-row input:focus { border-color: #00d4ff; }
-        .search-row button, .btn-primary {
-            padding: 12px 24px; font-size: 15px;
-            background: #00d4ff; color: #1a1a2e;
-            border: none; border-radius: 8px;
-            cursor: pointer; font-weight: bold;
+        .search-row input[type="text"]::placeholder { color: #55524a; }
+        .search-row input[type="text"]:focus { border-color: #c8a25a; }
+        .search-row button {
+            padding: 8px 18px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            background: #c8a25a;
+            color: #0d0d10;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
             white-space: nowrap;
+            letter-spacing: 0.02em;
+            transition: background 100ms linear;
         }
-        .search-row button:hover, .btn-primary:hover { background: #00b8d9; }
-        .search-row button:disabled, .btn-primary:disabled {
-            background: #444; color: #888; cursor: not-allowed;
-        }
+        .search-row button:hover { background: #d4b06a; }
+        .search-row button:disabled { background: #2e2e38; color: #55524a; cursor: not-allowed; }
 
-        .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+        /* ── FILTERS ── */
+        .filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .filter-group label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: #55524a;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
         .filters select {
-            padding: 8px 10px; font-size: 13px;
-            border: 1px solid #2a2a4a; border-radius: 6px;
-            background: #0f0f23; color: #e0e0e0;
+            padding: 5px 8px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 12px;
+            border: 1px solid #2e2e38;
+            border-radius: 2px;
+            background: #0a0a0d;
+            color: #e8e4d8;
+            outline: none;
+            cursor: pointer;
         }
-        .filters label { color: #888; font-size: 12px; display: flex; flex-direction: column; gap: 3px; }
+        .filters select:focus { border-color: #c8a25a; }
 
-        /* Status */
-        .status { text-align: center; padding: 20px; color: #888; font-size: 14px; }
-        .status.error { color: #ff6b6b; }
-        .spinner {
-            display: inline-block; width: 18px; height: 18px;
-            border: 3px solid #2a2a4a; border-top-color: #00d4ff;
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-            vertical-align: middle; margin-right: 8px;
+        /* ── STATUS / PROGRESS ── */
+        .status {
+            padding: 8px 0;
+            color: #8a8474;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .status.error { color: #a04848; }
+        .searching-indicator {
+            display: inline-block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: #8a8474;
+        }
+        .searching-indicator::after {
+            content: '_';
+            animation: blink 0.8s step-end infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-        /* Result cards */
-        .results-count { color: #00d4ff; font-size: 13px; margin-bottom: 10px; }
-        .result-card {
-            background: #16213e; border: 1px solid #2a2a4a;
-            border-radius: 10px; padding: 16px; margin-bottom: 10px;
+        /* ── RESULTS TABLE ── */
+        .results-header {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #55524a;
+            margin-bottom: 6px;
+            letter-spacing: 0.03em;
         }
-        .result-card:hover { border-color: #00d4ff; }
-        .result-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 4px; }
-        .result-author { color: #aaa; margin-bottom: 6px; font-size: 14px; }
-        .result-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-        .result-meta span {
-            font-size: 12px; color: #888; background: #0f0f23;
-            padding: 3px 8px; border-radius: 4px;
-        }
-        .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .results-header .count { color: #c8a25a; }
 
-        .btn-download {
-            padding: 7px 14px; font-size: 13px;
-            background: #28a745; color: white;
-            border: none; border-radius: 6px; cursor: pointer;
+        .results-list {
+            border-top: 1px solid #222228;
         }
-        .btn-download:hover { background: #218838; }
-        .btn-download:disabled { background: #444; color: #888; cursor: not-allowed; }
 
-        .btn-outline {
-            padding: 7px 14px; font-size: 13px;
-            background: transparent; color: #00d4ff;
-            border: 1px solid #00d4ff; border-radius: 6px; cursor: pointer;
+        .result-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid #1a1a1e;
+            cursor: pointer;
+            transition: background 100ms linear;
         }
-        .btn-outline:hover { background: #16213e; }
+        .result-row:hover { background: #141418; }
+        .result-row.top-match::before {
+            /* amber marker handled via JS — see createResultRow */
+        }
 
-        /* Download links panel */
+        .result-main { min-width: 0; }
+        .result-title-line {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .top-marker {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #c8a25a;
+            flex-shrink: 0;
+        }
+        .result-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #e8e4d8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60ch;
+        }
+        .result-author {
+            font-size: 12px;
+            color: #8a8474;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .result-biblio {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #55524a;
+            margin-top: 2px;
+            letter-spacing: 0.01em;
+        }
+        .result-biblio .sep { margin: 0 4px; color: #2e2e38; }
+
+        .result-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            align-self: start;
+            padding-top: 1px;
+        }
+        .btn-dl {
+            padding: 4px 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            background: #c8a25a;
+            color: #0d0d10;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 100ms linear;
+        }
+        .btn-dl:hover { background: #d4b06a; }
+        .btn-dl:disabled { background: #2e2e38; color: #55524a; cursor: not-allowed; }
+        .btn-dl.success { background: #6b8e4a; color: #e8e4d8; }
+        .btn-dl.already { background: #2e2e38; color: #8a8474; }
+
+        .btn-text {
+            padding: 4px 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            background: none;
+            color: #8a8474;
+            border: 1px solid #2e2e38;
+            border-radius: 2px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color 100ms linear, border-color 100ms linear;
+        }
+        .btn-text:hover { color: #e8e4d8; border-color: #55524a; }
+        .btn-text:disabled { color: #2e2e38; cursor: not-allowed; }
+
+        /* ── ROW EXPANSION ── */
+        .row-detail {
+            display: none;
+            padding: 8px 0 10px 0;
+            border-bottom: 1px solid #222228;
+            background: #141418;
+        }
+        .row-detail.open { display: block; }
+        .detail-inner { padding: 0 12px; }
+
+        .meta-block {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #8a8474;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+        .meta-block .field-label {
+            display: inline-block;
+            width: 9ch;
+            color: #55524a;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .meta-block .field-value { color: #e8e4d8; }
+        .meta-block .field-md5 { color: #8a8474; cursor: pointer; }
+        .meta-block .field-md5:hover { color: #c8a25a; }
+
         .download-links {
-            display: none; margin-top: 10px; padding: 10px;
-            background: #0f0f23; border-radius: 6px;
+            display: none;
+            margin: 8px 0;
+            padding: 8px;
+            background: #0a0a0d;
+            border: 1px solid #222228;
+            border-radius: 2px;
         }
         .download-links.show { display: block; }
         .download-links a {
-            display: block; color: #00d4ff; text-decoration: none;
-            padding: 4px 0; font-size: 13px;
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #8a8474;
+            text-decoration: none;
+            padding: 3px 0;
         }
-        .download-links a:hover { text-decoration: underline; }
-        .dl-source { color: #888; font-size: 11px; margin-right: 6px; }
+        .download-links a:hover { color: #c8a25a; }
+        .dl-source { color: #55524a; margin-right: 6px; }
 
-        .card-status { margin-top: 6px; font-size: 13px; color: #888; }
-        .card-status.success { color: #28a745; }
-        .card-status.error { color: #ff6b6b; }
+        .row-status {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #55524a;
+            margin-top: 4px;
+        }
+        .row-status.success { color: #6b8e4a; }
+        .row-status.error { color: #a04848; }
 
-        /* Library */
-        .library-empty {
-            text-align: center; padding: 40px; color: #666;
+        /* ── LIBRARY ── */
+        .library-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
         }
-        .library-search {
-            margin: 20px 0; display: flex; gap: 10px;
+        .lib-filter {
+            flex: 1;
+            max-width: 320px;
+            padding: 6px 10px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            border: 1px solid #2e2e38;
+            border-radius: 2px;
+            background: #0a0a0d;
+            color: #e8e4d8;
+            outline: none;
+            transition: border-color 100ms linear;
         }
-        .library-search input {
-            flex: 1; padding: 10px 14px; font-size: 14px;
-            border: 2px solid #2a2a4a; border-radius: 8px;
-            background: #0f0f23; color: #e0e0e0; outline: none;
+        .lib-filter::placeholder { color: #55524a; }
+        .lib-filter:focus { border-color: #c8a25a; }
+        .lib-hint {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #55524a;
         }
-        .library-search input:focus { border-color: #00d4ff; }
-        .book-badge {
-            display: inline-block; font-size: 11px; padding: 2px 6px;
-            border-radius: 3px; margin-left: 6px;
+
+        .lib-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid #1a1a1e;
         }
-        .badge-content { background: #1a5276; color: #85c1e9; }
-        .badge-translated { background: #1a4731; color: #82e0aa; }
+        .lib-badges {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: #55524a;
+            margin-top: 2px;
+            letter-spacing: 0.01em;
+        }
+        .lib-badge { color: #6b8e4a; }
+        .lib-id {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #2e2e38;
+            align-self: start;
+            cursor: pointer;
+            padding-top: 2px;
+            transition: color 100ms linear;
+        }
+        .lib-id:hover { color: #c8a25a; }
+
+        .empty-state {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: #55524a;
+            padding: 16px 0;
+        }
+
+        /* ── BOTTOM STATUS STRIP ── */
+        .status-strip {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0a0a0d;
+            border-top: 1px solid #1a1a1e;
+            padding: 4px 16px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: #55524a;
+            z-index: 100;
+        }
+        .status-strip .sep { color: #1a1a1e; }
+        .status-strip .key-val .val { color: #8a8474; }
+        .status-strip .spacer { flex: 1; }
+        .status-strip .hint {
+            color: #2e2e38;
+        }
+
+        /* ── HELP MODAL ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 13, 0.85);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #141418;
+            border: 1px solid #2e2e38;
+            border-radius: 2px;
+            padding: 20px 24px;
+            max-width: 420px;
+            width: 100%;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: #8a8474;
+        }
+        .modal h2 {
+            font-size: 13px;
+            color: #e8e4d8;
+            font-weight: 500;
+            margin-bottom: 14px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .keymap-row {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #1a1a1e;
+        }
+        .keymap-row:last-child { border-bottom: none; }
+        .keymap-key { color: #c8a25a; min-width: 5ch; }
+        .keymap-desc { color: #8a8474; }
+        .modal-close {
+            margin-top: 14px;
+            font-size: 11px;
+            color: #55524a;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: #e8e4d8; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="layout">
+        <!-- HEADER -->
         <header>
-            <h1>Bookfinder General</h1>
-            <p>Search & Download Research Books</p>
+            <div class="header-top">
+                <div class="wordmark-block">
+                    <span class="wordmark">Bookfinder General</span>
+                    <span class="tagline">Hunts books, not witches.</span>
+                </div>
+                <div class="header-status" id="headerStatus">—</div>
+            </div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('search')">Search</button>
+                <button class="tab" onclick="switchTab('library')">Library</button>
+            </div>
         </header>
 
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('search')">Search</button>
-            <button class="tab" onclick="switchTab('library')">Library</button>
-        </div>
+        <!-- MAIN -->
+        <main>
+            <!-- ── SEARCH TAB ── -->
+            <div id="tab-search" class="tab-content active">
+                <div class="search-box">
+                    <div class="search-row">
+                        <input type="text" id="query"
+                               placeholder="Title, author, ISBN, or topic."
+                               autofocus autocomplete="off" spellcheck="false">
+                        <button id="searchBtn" onclick="doSearch()">Search</button>
+                    </div>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Language</label>
+                            <select id="lang">
+                                <option value="">All</option>
+                                <option value="en">English</option>
+                                <option value="de">German</option>
+                                <option value="fr">French</option>
+                                <option value="es">Spanish</option>
+                                <option value="it">Italian</option>
+                                <option value="ru">Russian</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="nl">Dutch</option>
+                                <option value="pl">Polish</option>
+                                <option value="la">Latin</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Format</label>
+                            <select id="ext">
+                                <option value="">All</option>
+                                <option value="pdf">PDF</option>
+                                <option value="epub">EPUB</option>
+                                <option value="mobi">MOBI</option>
+                                <option value="djvu">DJVU</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Type</label>
+                            <select id="content">
+                                <option value="">All</option>
+                                <option value="book_nonfiction">Non-fiction</option>
+                                <option value="book_fiction">Fiction</option>
+                                <option value="magazine">Magazines</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Search Tab -->
-        <div id="tab-search" class="tab-content active">
-            <div class="search-box">
-                <div class="search-row">
-                    <input type="text" id="query" placeholder="Search for books... (titles in any language, authors, topics)" autofocus>
-                    <button id="searchBtn" onclick="doSearch()">Search</button>
-                </div>
-                <div class="filters">
-                    <label>Language
-                        <select id="lang">
-                            <option value="">All</option>
-                            <option value="en">English</option>
-                            <option value="de">German</option>
-                            <option value="fr">French</option>
-                            <option value="es">Spanish</option>
-                            <option value="it">Italian</option>
-                            <option value="ru">Russian</option>
-                            <option value="pt">Portuguese</option>
-                            <option value="nl">Dutch</option>
-                            <option value="pl">Polish</option>
-                            <option value="la">Latin</option>
-                        </select>
-                    </label>
-                    <label>Format
-                        <select id="ext">
-                            <option value="">All</option>
-                            <option value="pdf">PDF</option>
-                            <option value="epub">EPUB</option>
-                            <option value="mobi">MOBI</option>
-                            <option value="djvu">DJVU</option>
-                        </select>
-                    </label>
-                    <label>Type
-                        <select id="content">
-                            <option value="">All</option>
-                            <option value="book_nonfiction">Non-fiction</option>
-                            <option value="book_fiction">Fiction</option>
-                            <option value="magazine">Magazines</option>
-                        </select>
-                    </label>
-                </div>
+                <div id="status" class="status" style="display:none;"></div>
+                <div id="results"></div>
             </div>
 
-            <div id="status" class="status" style="display:none;"></div>
-            <div id="results"></div>
-        </div>
-
-        <!-- Library Tab -->
-        <div id="tab-library" class="tab-content">
-            <div class="library-search">
-                <input type="text" id="libQuery" placeholder="Filter library..." oninput="loadLibrary(this.value)">
+            <!-- ── LIBRARY TAB ── -->
+            <div id="tab-library" class="tab-content">
+                <div class="library-controls">
+                    <input type="text" class="lib-filter" id="libQuery"
+                           placeholder="Filter…" oninput="loadLibrary(this.value)"
+                           autocomplete="off" spellcheck="false">
+                    <span class="lib-hint">/ to focus</span>
+                </div>
+                <div id="library-results"></div>
             </div>
-            <div id="library-results"></div>
+        </main>
+
+        <!-- BOTTOM STATUS STRIP -->
+        <div class="status-strip" id="statusStrip">
+            <span class="key-val">mirror <span class="val" id="stripMirror">—</span></span>
+            <span class="sep">·</span>
+            <span class="key-val">key <span class="val" id="stripKey">—</span></span>
+            <span class="sep">·</span>
+            <span class="key-val" id="stripTiming">—</span>
+            <span class="spacer"></span>
+            <span class="hint">? keymap</span>
+        </div>
+    </div>
+
+    <!-- HELP MODAL -->
+    <div class="modal-overlay" id="helpModal" onclick="closeHelp(event)">
+        <div class="modal">
+            <h2>Keyboard shortcuts</h2>
+            <div class="keymap-row"><span class="keymap-key">/</span><span class="keymap-desc">Focus search</span></div>
+            <div class="keymap-row"><span class="keymap-key">Esc</span><span class="keymap-desc">Clear focus / close</span></div>
+            <div class="keymap-row"><span class="keymap-key">Enter</span><span class="keymap-desc">Submit search</span></div>
+            <div class="keymap-row"><span class="keymap-key">j / k</span><span class="keymap-desc">Select next / prev result</span></div>
+            <div class="keymap-row"><span class="keymap-key">o</span><span class="keymap-desc">Expand selected result</span></div>
+            <div class="keymap-row"><span class="keymap-key">d</span><span class="keymap-desc">Download selected result</span></div>
+            <div class="keymap-row"><span class="keymap-key">l</span><span class="keymap-desc">Jump to Library tab</span></div>
+            <div class="keymap-row"><span class="keymap-key">?</span><span class="keymap-desc">Toggle this panel</span></div>
+            <div class="modal-close" onclick="document.getElementById('helpModal').classList.remove('open')">[ close ]</div>
         </div>
     </div>
 
     <script>
-        const queryEl = document.getElementById('query');
-        queryEl.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+        // ── ESCAPE ──
+        function esc(s) {
+            if (typeof s !== 'string') return s ?? '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
 
+        // ── TAB SWITCHING ──
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
             document.getElementById('tab-' + tab).classList.add('active');
             if (tab === 'library') loadLibrary();
         }
 
+        // ── RESULT-ROW SELECTION ──
+        let selectedIdx = -1;
+        let resultRows = [];
+
+        function selectRow(idx) {
+            resultRows.forEach((r, i) => {
+                if (i === idx) r.style.background = '#1c1c22';
+                else r.style.background = '';
+            });
+            selectedIdx = idx;
+        }
+
+        // ── SEARCH ──
         async function doSearch() {
-            const q = queryEl.value.trim();
+            const q = document.getElementById('query').value.trim();
             if (!q) return;
 
-            const lang = document.getElementById('lang').value;
-            const ext = document.getElementById('ext').value;
+            const lang    = document.getElementById('lang').value;
+            const ext     = document.getElementById('ext').value;
             const content = document.getElementById('content').value;
-            const btn = document.getElementById('searchBtn');
-            const status = document.getElementById('status');
-            const results = document.getElementById('results');
+            const btn     = document.getElementById('searchBtn');
+            const statusEl= document.getElementById('status');
+            const resultsEl= document.getElementById('results');
 
-            btn.disabled = true; btn.textContent = 'Searching...';
-            status.style.display = 'block'; status.className = 'status';
-            status.innerHTML = '<span class="spinner"></span> Searching... (a browser window may open briefly)';
-            results.innerHTML = '';
+            btn.disabled = true; btn.textContent = 'Searching…';
+            statusEl.style.display = 'block'; statusEl.className = 'status';
+            statusEl.innerHTML = '<span class="searching-indicator">searching annas-archive.gl via playwright</span>';
+            resultsEl.innerHTML = '';
+            resultRows = []; selectedIdx = -1;
+            updateStripTiming('searching…');
 
+            const t0 = performance.now();
             try {
                 const params = new URLSearchParams({ q, lang, ext, content });
                 const resp = await fetch('/api/search?' + params);
                 const data = await resp.json();
+                const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+                updateStripTiming('search: ' + elapsed + 's');
 
                 if (data.error) {
-                    status.className = 'status error';
-                    status.textContent = 'Error: ' + data.error;
+                    statusEl.className = 'status error';
+                    statusEl.textContent = 'Error: ' + data.error;
                     return;
                 }
-                if (data.results.length === 0) {
-                    status.textContent = 'No results found. Try different search terms.';
+                if (!data.results || data.results.length === 0) {
+                    statusEl.textContent = 'No results. Try the author\'s surname plus one keyword from the title.';
                     return;
                 }
 
-                status.style.display = 'none';
-                results.innerHTML = `<div class="results-count">Found ${data.results.length} results</div>`;
-                data.results.forEach(r => results.appendChild(createResultCard(r)));
+                statusEl.style.display = 'none';
+                resultsEl.innerHTML = `<div class="results-header">
+                    <span class="count">${data.results.length}</span> result${data.results.length !== 1 ? 's' : ''}
+                </div><div class="results-list" id="resultList"></div>`;
+
+                const list = document.getElementById('resultList');
+                data.results.forEach((r, i) => {
+                    const { row, detail } = createResultRow(r, i);
+                    list.appendChild(row);
+                    list.appendChild(detail);
+                    resultRows.push(row);
+                });
             } catch (err) {
-                status.className = 'status error';
-                status.textContent = 'Connection error: ' + err.message;
+                statusEl.className = 'status error';
+                statusEl.textContent = 'Connection error: ' + err.message;
+                updateStripTiming('error');
             } finally {
                 btn.disabled = false; btn.textContent = 'Search';
             }
         }
 
-        function createResultCard(r) {
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            card.innerHTML = `
-                <div class="result-title">${esc(r.title)}</div>
-                ${r.author ? `<div class="result-author">by ${esc(r.author)}</div>` : ''}
-                <div class="result-meta">
-                    ${r.year ? `<span>${esc(r.year)}</span>` : ''}
-                    ${r.extension ? `<span>${esc(r.extension.toUpperCase())}</span>` : ''}
-                    ${r.filesize ? `<span>${esc(r.filesize)}</span>` : ''}
-                    ${r.language ? `<span>${esc(r.language)}</span>` : ''}
+        function createResultRow(r, idx) {
+            const isTop = idx < 3;
+            const md5 = r.md5 || ('row' + idx);
+
+            // Main row
+            const row = document.createElement('div');
+            row.className = 'result-row' + (isTop ? ' top-match' : '');
+            row.dataset.idx = idx;
+            row.innerHTML = `
+                <div class="result-main">
+                    <div class="result-title-line">
+                        ${isTop ? '<span class="top-marker">*</span>' : ''}
+                        <span class="result-title" title="${esc(r.title)}">${esc(r.title)}</span>
+                        ${r.author ? `<span class="result-author">${esc(r.author)}</span>` : ''}
+                    </div>
+                    <div class="result-biblio">
+                        ${r.year ? esc(r.year) : ''}${r.year ? '<span class="sep">·</span>' : ''}${r.language ? esc(r.language) : ''}${r.language ? '<span class="sep">·</span>' : ''}${r.extension ? esc(r.extension.toUpperCase()) : ''}${r.extension ? '<span class="sep">·</span>' : ''}${r.filesize ? esc(r.filesize) : ''}
+                    </div>
                 </div>
                 <div class="result-actions">
-                    <button class="btn-download" onclick="downloadToLibrary(this, ${esc(JSON.stringify(JSON.stringify(r)))})">
-                        Download to Library
+                    <button class="btn-dl" id="dl-${esc(md5)}"
+                        onclick="event.stopPropagation(); downloadRow(this, ${esc(JSON.stringify(JSON.stringify(r)))}, '${esc(md5)}')">
+                        Download
                     </button>
-                    <button class="btn-outline" onclick="toggleLinks('${r.md5}', this)">
-                        Manual Download Links
+                    <button class="btn-text" id="links-btn-${esc(md5)}"
+                        onclick="event.stopPropagation(); toggleLinks('${esc(md5)}', this)">
+                        Links
                     </button>
                 </div>
-                <div class="download-links" id="links-${r.md5}"></div>
-                <div class="card-status" id="status-${r.md5}"></div>
             `;
-            return card;
+            row.addEventListener('click', () => {
+                selectRow(idx);
+                toggleDetail(md5);
+            });
+
+            // Detail panel
+            const detail = document.createElement('div');
+            detail.className = 'row-detail';
+            detail.id = 'detail-' + md5;
+            detail.innerHTML = `
+                <div class="detail-inner">
+                    <div class="meta-block">
+                        <div><span class="field-label">TITLE</span><span class="field-value">${esc(r.title)}</span></div>
+                        ${r.author    ? `<div><span class="field-label">AUTHOR</span><span class="field-value">${esc(r.author)}</span></div>` : ''}
+                        ${r.year      ? `<div><span class="field-label">YEAR</span><span class="field-value">${esc(r.year)}</span></div>` : ''}
+                        ${r.language  ? `<div><span class="field-label">LANGUAGE</span><span class="field-value">${esc(r.language)}</span></div>` : ''}
+                        ${r.extension ? `<div><span class="field-label">FORMAT</span><span class="field-value">${esc(r.extension.toUpperCase())}</span></div>` : ''}
+                        ${r.filesize  ? `<div><span class="field-label">SIZE</span><span class="field-value">${esc(r.filesize)}</span></div>` : ''}
+                        ${r.md5       ? `<div><span class="field-label">MD5</span><span class="field-value field-md5" title="Click to copy" onclick="copyText('${esc(r.md5)}')">${esc(r.md5)}</span></div>` : ''}
+                    </div>
+                    <div class="download-links" id="links-${esc(md5)}"></div>
+                    <div class="row-status" id="status-${esc(md5)}"></div>
+                </div>
+            `;
+
+            return { row, detail };
         }
 
-        async function downloadToLibrary(btn, bookJson) {
-            const book = JSON.parse(bookJson);
-            const statusEl = document.getElementById('status-' + book.md5);
+        function toggleDetail(md5) {
+            const el = document.getElementById('detail-' + md5);
+            if (!el) return;
+            el.classList.toggle('open');
+        }
 
-            btn.disabled = true; btn.textContent = 'Downloading...';
-            statusEl.textContent = 'Downloading and processing (this may take a minute)...';
-            statusEl.className = 'card-status';
+        // ── DOWNLOAD ──
+        async function downloadRow(btn, bookJson, md5) {
+            const book = JSON.parse(bookJson);
+            const statusEl = document.getElementById('status-' + md5);
+
+            btn.disabled = true; btn.textContent = 'Downloading…';
+            if (statusEl) { statusEl.textContent = 'Downloading…'; statusEl.className = 'row-status'; }
 
             try {
                 const resp = await fetch('/api/download', {
@@ -322,105 +791,182 @@
                 const data = await resp.json();
 
                 if (data.error) {
-                    statusEl.textContent = 'Error: ' + data.error;
-                    statusEl.className = 'card-status error';
-                    btn.disabled = false; btn.textContent = 'Retry Download';
+                    if (statusEl) { statusEl.textContent = 'Error: ' + data.error; statusEl.className = 'row-status error'; }
+                    btn.disabled = false; btn.textContent = 'Retry';
                     return;
                 }
 
-                let msg = data.status === 'already_downloaded' ? 'Already in library!' : 'Downloaded & processed!';
+                let msg = data.status === 'already_downloaded' ? 'Already in library.' : 'Downloaded.';
                 if (data.has_content) msg += ' Text extracted.';
-                if (data.has_translation) msg += ' Translated to English.';
+                if (data.has_translation) msg += ' Translated.';
 
-                statusEl.textContent = msg;
-                statusEl.className = 'card-status success';
-                btn.textContent = 'In Library';
+                if (statusEl) { statusEl.textContent = msg; statusEl.className = 'row-status success'; }
+                btn.textContent = data.status === 'already_downloaded' ? '✓ Library' : '✓ Done';
+                btn.classList.add(data.status === 'already_downloaded' ? 'already' : 'success');
             } catch (err) {
-                statusEl.textContent = 'Error: ' + err.message;
-                statusEl.className = 'card-status error';
-                btn.disabled = false; btn.textContent = 'Retry Download';
+                if (statusEl) { statusEl.textContent = 'Error: ' + err.message; statusEl.className = 'row-status error'; }
+                btn.disabled = false; btn.textContent = 'Retry';
             }
         }
 
+        // ── LINKS PANEL ──
         async function toggleLinks(md5, btn) {
             const container = document.getElementById('links-' + md5);
+            if (!container) return;
+
+            // Ensure detail is open
+            const detail = document.getElementById('detail-' + md5);
+            if (detail && !detail.classList.contains('open')) detail.classList.add('open');
+
             if (container.classList.contains('show')) {
-                container.classList.remove('show');
-                return;
+                container.classList.remove('show'); return;
             }
 
-            btn.textContent = 'Loading...'; btn.disabled = true;
-
+            btn.textContent = 'Loading…'; btn.disabled = true;
             try {
-                const resp = await fetch('/api/links?md5=' + md5);
+                const resp = await fetch('/api/links?md5=' + encodeURIComponent(md5));
                 const data = await resp.json();
-
                 if (data.links && data.links.length > 0) {
                     container.innerHTML = data.links.map(l =>
                         `<a href="${esc(l.url)}" target="_blank" rel="noopener">
-                            <span class="dl-source">[${esc(l.source)}]</span>
-                            ${esc(l.url.length > 80 ? l.url.substring(0, 80) + '...' : l.url)}
+                            <span class="dl-source">[${esc(l.source)}]</span>${esc(l.url.length > 90 ? l.url.substring(0, 90) + '…' : l.url)}
                         </a>`
                     ).join('');
-                    container.classList.add('show');
                 } else {
-                    container.innerHTML = '<span style="color:#888">No download links found.</span>';
-                    container.classList.add('show');
+                    container.innerHTML = '<span style="color:#55524a">No download links found.</span>';
                 }
+                container.classList.add('show');
             } catch (err) {
-                container.innerHTML = '<span style="color:#ff6b6b">Error loading links.</span>';
+                container.innerHTML = `<span style="color:#a04848">Error loading links.</span>`;
                 container.classList.add('show');
             } finally {
-                btn.textContent = 'Manual Download Links'; btn.disabled = false;
+                btn.textContent = 'Links'; btn.disabled = false;
             }
         }
 
+        // ── LIBRARY ──
         async function loadLibrary(query = '') {
             const container = document.getElementById('library-results');
             const params = query ? '?q=' + encodeURIComponent(query) : '';
-
             try {
                 const resp = await fetch('/api/library' + params);
                 const data = await resp.json();
-
                 if (!data.books || data.books.length === 0) {
-                    container.innerHTML = `<div class="library-empty">
-                        ${query ? 'No matching books.' : 'Your library is empty. Search and download some books!'}
-                    </div>`;
+                    container.innerHTML = `<div class="empty-state">${query ? 'No matching books.' : 'Library empty. Search and download to begin.'}</div>`;
                     return;
                 }
-
-                container.innerHTML = `<div class="results-count">${data.books.length} book(s) in library</div>`;
-                data.books.forEach(b => {
-                    const card = document.createElement('div');
-                    card.className = 'result-card';
-                    card.innerHTML = `
-                        <div class="result-title">
-                            ${esc(b.title)}
-                            ${b.has_content ? '<span class="book-badge badge-content">Text Extracted</span>' : ''}
-                            ${b.has_translation ? '<span class="book-badge badge-translated">Translated</span>' : ''}
-                        </div>
-                        ${b.author ? `<div class="result-author">by ${esc(b.author)}</div>` : ''}
-                        <div class="result-meta">
-                            ${b.year ? `<span>${esc(b.year)}</span>` : ''}
-                            ${b.format ? `<span>${esc(b.format.toUpperCase())}</span>` : ''}
-                            ${b.language ? `<span>${esc(b.language)}</span>` : ''}
-                        </div>
-                        <div style="font-size:12px;color:#666;margin-top:4px">ID: ${esc(b.id)}</div>
-                    `;
-                    container.appendChild(card);
-                });
+                container.innerHTML = `<div class="results-header"><span class="count">${data.books.length}</span> volume${data.books.length !== 1 ? 's' : ''}</div>
+                    <div class="results-list">` +
+                    data.books.map(b => {
+                        const badges = [
+                            b.has_content ? '<span class="lib-badge">[text]</span>' : '',
+                            b.has_translation ? '<span class="lib-badge">[translated]</span>' : '',
+                        ].filter(Boolean).join(' · ');
+                        return `<div class="lib-row">
+                            <div class="result-main">
+                                <div class="result-title-line">
+                                    <span class="result-title" title="${esc(b.title)}">${esc(b.title)}</span>
+                                    ${b.author ? `<span class="result-author">${esc(b.author)}</span>` : ''}
+                                </div>
+                                <div class="result-biblio">
+                                    ${b.year ? esc(b.year) + '<span class="sep">·</span>' : ''}${b.language ? esc(b.language) + '<span class="sep">·</span>' : ''}${b.format ? esc(b.format.toUpperCase()) : ''}
+                                </div>
+                                ${badges ? `<div class="lib-badges">${badges}</div>` : ''}
+                            </div>
+                            <span class="lib-id" title="Click to copy ID" onclick="copyText('${esc(b.id)}')">${esc((b.id || '').substring(0,8))}</span>
+                        </div>`;
+                    }).join('') + '</div>';
             } catch (err) {
-                container.innerHTML = `<div class="library-empty" style="color:#ff6b6b">Error loading library.</div>`;
+                container.innerHTML = `<div class="empty-state" style="color:#a04848">Error loading library.</div>`;
             }
         }
 
-        function esc(s) {
-            if (typeof s !== 'string') return s;
-            const d = document.createElement('div');
-            d.textContent = s;
-            return d.innerHTML;
+        // ── COPY UTILITY ──
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {}).catch(() => {});
         }
+
+        // ── STATUS STRIP ──
+        function updateStripTiming(msg) {
+            document.getElementById('stripTiming').textContent = msg;
+        }
+
+        async function initStatusStrip() {
+            try {
+                const resp = await fetch('/api/status');
+                const data = await resp.json();
+                if (data.mirror) document.getElementById('stripMirror').textContent = data.mirror;
+                if (data.annas_key !== undefined) {
+                    document.getElementById('stripKey').textContent = data.annas_key ? 'set' : 'none';
+                }
+            } catch (e) {
+                // strip stays at defaults
+            }
+        }
+
+        // ── HELP MODAL ──
+        function closeHelp(e) {
+            if (e.target === document.getElementById('helpModal')) {
+                document.getElementById('helpModal').classList.remove('open');
+            }
+        }
+
+        // ── KEYBOARD SHORTCUTS ──
+        document.addEventListener('keydown', e => {
+            const active = document.activeElement;
+            const inInput = active && (active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA');
+
+            if (e.key === '?') {
+                document.getElementById('helpModal').classList.toggle('open');
+                return;
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('helpModal').classList.remove('open');
+                if (inInput) active.blur();
+                return;
+            }
+            if (e.key === '/' && !inInput) {
+                e.preventDefault();
+                const q = document.getElementById('query');
+                switchTab('search');
+                q.focus();
+                return;
+            }
+            if (e.key === 'l' && !inInput) {
+                switchTab('library');
+                return;
+            }
+            if (!inInput && resultRows.length > 0) {
+                if (e.key === 'j') {
+                    e.preventDefault();
+                    selectRow(Math.min(selectedIdx + 1, resultRows.length - 1));
+                    return;
+                }
+                if (e.key === 'k') {
+                    e.preventDefault();
+                    selectRow(Math.max(selectedIdx - 1, 0));
+                    return;
+                }
+                if (e.key === 'o' && selectedIdx >= 0) {
+                    resultRows[selectedIdx].click();
+                    return;
+                }
+                if (e.key === 'd' && selectedIdx >= 0) {
+                    const dlBtn = resultRows[selectedIdx].querySelector('.btn-dl');
+                    if (dlBtn && !dlBtn.disabled) dlBtn.click();
+                    return;
+                }
+            }
+            if (e.key === 'Enter' && inInput && active.id === 'query') {
+                doSearch();
+            }
+        });
+
+        // ── INIT ──
+        initStatusStrip();
+        document.getElementById('query').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doSearch();
+        });
     </script>
 </body>
 </html>
