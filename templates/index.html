@@ -861,6 +861,7 @@
                         const badges = [
                             b.has_content ? '<span class="lib-badge">[text]</span>' : '',
                             b.has_translation ? '<span class="lib-badge">[translated]</span>' : '',
+                            b.has_summary ? '<span class="lib-badge">[summarized]</span>' : '',
                         ].filter(Boolean).join(' · ');
                         return `<div class="lib-row">
                             <div class="result-main">
