@@ -1,317 +1,872 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bookfinder General</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        /* ── RESET ── */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #e0e0e0;
-            min-height: 100vh;
+
+        /* ────────────────────────────────────────────────────
+           THEME TOKENS — light is default (data-theme="light")
+           dark activates with data-theme="dark"
+        ──────────────────────────────────────────────────── */
+
+        /* LIGHT — aged-paper / printed library catalog */
+        html[data-theme="light"] {
+            --bg-primary:    #f4f0e6;   /* warm parchment */
+            --bg-raised:     #ede8da;   /* slightly deeper panel */
+            --bg-inset:      #faf7f0;   /* input well, near-white cream */
+            --border-dim:    #d8d0bc;   /* hairline rules */
+            --border-mid:    #c2b89e;   /* field borders */
+            --text-primary:  #1a1814;   /* dark ink */
+            --text-secondary:#6b6152;   /* metadata, labels */
+            --text-dim:      #9e9080;   /* very dim hints */
+            --accent:        #b8862e;   /* amber/ochre — slightly deeper for contrast on light */
+            --accent-hover:  #c8962e;
+            --accent-dim:    #d4b06a;   /* dim amber markers */
+            --error:         #8c3030;   /* iron oxide on light bg */
+            --success:       #4a6e2a;   /* manuscript green on light bg */
+            --row-hover:     #ede5cf;
+            --row-selected:  #e4dbc8;
+            --row-sep:       #ddd6c4;
+            --detail-bg:     #ede8da;
+            --dl-links-bg:   #faf7f0;
+            --modal-overlay: rgba(244,240,230,0.88);
+            --modal-bg:      #ede8da;
+            --strip-bg:      #e8e2d4;
+            --strip-border:  #d8d0bc;
         }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
 
-        header { text-align: center; padding: 30px 0 10px; }
-        header h1 { font-size: 2.2em; color: #00d4ff; margin-bottom: 6px; }
-        header p { color: #888; font-size: 1em; }
+        /* DARK — dim reading room (original palette) */
+        html[data-theme="dark"] {
+            --bg-primary:    #0d0d10;
+            --bg-raised:     #141418;
+            --bg-inset:      #0a0a0d;
+            --border-dim:    #222228;
+            --border-mid:    #2e2e38;
+            --text-primary:  #e8e4d8;
+            --text-secondary:#8a8474;
+            --text-dim:      #55524a;
+            --accent:        #c8a25a;
+            --accent-hover:  #d4b06a;
+            --accent-dim:    #7a6233;
+            --error:         #a04848;
+            --success:       #6b8e4a;
+            --row-hover:     #141418;
+            --row-selected:  #1c1c22;
+            --row-sep:       #1a1a1e;
+            --detail-bg:     #141418;
+            --dl-links-bg:   #0a0a0d;
+            --modal-overlay: rgba(10,10,13,0.85);
+            --modal-bg:      #141418;
+            --strip-bg:      #0a0a0d;
+            --strip-border:  #1a1a1e;
+        }
 
-        /* Tabs */
+        /* ── BASE ── */
+        html, body {
+            height: 100%;
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.45;
+            transition: background 120ms linear, color 120ms linear;
+        }
+
+        /* ── LAYOUT ── */
+        .layout {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* ── HEADER ── */
+        header {
+            padding: 18px 0 0;
+            border-bottom: 1px solid var(--border-dim);
+            margin-bottom: 0;
+        }
+        .header-top {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding-bottom: 10px;
+        }
+        .wordmark {
+            font-family: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+            font-size: 1.55em;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 0.01em;
+            line-height: 1;
+        }
+        .tagline {
+            font-family: 'Old Standard TT', Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            font-weight: 400;
+            display: block;
+            margin-top: 3px;
+            letter-spacing: 0.01em;
+        }
+        .header-right {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+        .header-status {
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        /* ── THEME TOGGLE ── */
+        .theme-toggle {
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+            transition: color 100ms linear;
+            user-select: none;
+        }
+        .theme-toggle:hover { color: var(--accent); }
+
+        /* ── TABS ── */
         .tabs {
             display: flex;
             gap: 0;
-            margin: 20px 0 0;
-            border-bottom: 2px solid #2a2a4a;
+            margin-top: 0;
         }
         .tab {
-            padding: 12px 24px;
-            font-size: 15px;
+            padding: 8px 18px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
             background: none;
             border: none;
-            color: #888;
-            cursor: pointer;
             border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.2s;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-bottom: -1px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            transition: color 100ms linear, border-color 100ms linear;
         }
-        .tab:hover { color: #ccc; }
-        .tab.active { color: #00d4ff; border-bottom-color: #00d4ff; }
+        .tab:hover { color: var(--text-primary); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
+        /* ── MAIN ── */
+        main { flex: 1; padding-top: 16px; padding-bottom: 40px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Search */
+        /* ── SEARCH BOX ── */
         .search-box {
-            background: #16213e;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid #2a2a4a;
+            background: var(--bg-raised);
+            border: 1px solid var(--border-dim);
+            border-radius: 2px;
+            padding: 12px;
+            margin-bottom: 16px;
         }
-        .search-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .search-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
         .search-row input[type="text"] {
-            flex: 1; padding: 12px 16px; font-size: 15px;
-            border: 2px solid #2a2a4a; border-radius: 8px;
-            background: #0f0f23; color: #e0e0e0; outline: none;
+            flex: 1;
+            padding: 8px 10px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 14px;
+            border: 1px solid var(--border-mid);
+            border-radius: 2px;
+            background: var(--bg-inset);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 100ms linear;
         }
-        .search-row input:focus { border-color: #00d4ff; }
-        .search-row button, .btn-primary {
-            padding: 12px 24px; font-size: 15px;
-            background: #00d4ff; color: #1a1a2e;
-            border: none; border-radius: 8px;
-            cursor: pointer; font-weight: bold;
+        .search-row input[type="text"]::placeholder { color: var(--text-dim); }
+        .search-row input[type="text"]:focus { border-color: var(--accent); }
+        .search-row button {
+            padding: 8px 18px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
             white-space: nowrap;
+            letter-spacing: 0.02em;
+            transition: background 100ms linear;
         }
-        .search-row button:hover, .btn-primary:hover { background: #00b8d9; }
-        .search-row button:disabled, .btn-primary:disabled {
-            background: #444; color: #888; cursor: not-allowed;
-        }
+        .search-row button:hover { background: var(--accent-hover); }
+        .search-row button:disabled { background: var(--border-mid); color: var(--text-dim); cursor: not-allowed; }
 
-        .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+        /* ── FILTERS ── */
+        .filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .filter-group label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
         .filters select {
-            padding: 8px 10px; font-size: 13px;
-            border: 1px solid #2a2a4a; border-radius: 6px;
-            background: #0f0f23; color: #e0e0e0;
+            padding: 5px 8px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 12px;
+            border: 1px solid var(--border-mid);
+            border-radius: 2px;
+            background: var(--bg-inset);
+            color: var(--text-primary);
+            outline: none;
+            cursor: pointer;
         }
-        .filters label { color: #888; font-size: 12px; display: flex; flex-direction: column; gap: 3px; }
+        .filters select:focus { border-color: var(--accent); }
 
-        /* Status */
-        .status { text-align: center; padding: 20px; color: #888; font-size: 14px; }
-        .status.error { color: #ff6b6b; }
-        .spinner {
-            display: inline-block; width: 18px; height: 18px;
-            border: 3px solid #2a2a4a; border-top-color: #00d4ff;
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-            vertical-align: middle; margin-right: 8px;
+        /* ── STATUS / PROGRESS ── */
+        .status {
+            padding: 8px 0;
+            color: var(--text-secondary);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .status.error { color: var(--error); }
+        .searching-indicator {
+            display: inline-block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .searching-indicator::after {
+            content: '_';
+            animation: blink 0.8s step-end infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-        /* Result cards */
-        .results-count { color: #00d4ff; font-size: 13px; margin-bottom: 10px; }
-        .result-card {
-            background: #16213e; border: 1px solid #2a2a4a;
-            border-radius: 10px; padding: 16px; margin-bottom: 10px;
+        /* ── RESULTS TABLE ── */
+        .results-header {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            letter-spacing: 0.03em;
         }
-        .result-card:hover { border-color: #00d4ff; }
-        .result-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 4px; }
-        .result-author { color: #aaa; margin-bottom: 6px; font-size: 14px; }
-        .result-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-        .result-meta span {
-            font-size: 12px; color: #888; background: #0f0f23;
-            padding: 3px 8px; border-radius: 4px;
-        }
-        .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .results-header .count { color: var(--accent); }
 
-        .btn-download {
-            padding: 7px 14px; font-size: 13px;
-            background: #28a745; color: white;
-            border: none; border-radius: 6px; cursor: pointer;
+        .results-list {
+            border-top: 1px solid var(--border-dim);
         }
-        .btn-download:hover { background: #218838; }
-        .btn-download:disabled { background: #444; color: #888; cursor: not-allowed; }
 
-        .btn-outline {
-            padding: 7px 14px; font-size: 13px;
-            background: transparent; color: #00d4ff;
-            border: 1px solid #00d4ff; border-radius: 6px; cursor: pointer;
+        .result-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--row-sep);
+            cursor: pointer;
+            transition: background 100ms linear;
         }
-        .btn-outline:hover { background: #16213e; }
+        .result-row:hover { background: var(--row-hover); }
 
-        /* Download links panel */
+        .result-main { min-width: 0; }
+        .result-title-line {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .top-marker {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .result-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60ch;
+        }
+        .result-author {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .result-biblio {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+            letter-spacing: 0.01em;
+        }
+        .result-biblio .sep { margin: 0 4px; color: var(--border-mid); }
+
+        .result-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            align-self: start;
+            padding-top: 1px;
+        }
+        .btn-dl {
+            padding: 4px 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 100ms linear;
+        }
+        .btn-dl:hover { background: var(--accent-hover); }
+        .btn-dl:disabled { background: var(--border-mid); color: var(--text-dim); cursor: not-allowed; }
+        .btn-dl.success { background: var(--success); color: var(--bg-inset); }
+        .btn-dl.already { background: var(--border-mid); color: var(--text-secondary); }
+
+        .btn-text {
+            padding: 4px 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            background: none;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-mid);
+            border-radius: 2px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color 100ms linear, border-color 100ms linear;
+        }
+        .btn-text:hover { color: var(--text-primary); border-color: var(--text-dim); }
+        .btn-text:disabled { color: var(--border-mid); cursor: not-allowed; }
+
+        /* ── ROW EXPANSION ── */
+        .row-detail {
+            display: none;
+            padding: 8px 0 10px 0;
+            border-bottom: 1px solid var(--border-dim);
+            background: var(--detail-bg);
+        }
+        .row-detail.open { display: block; }
+        .detail-inner { padding: 0 12px; }
+
+        .meta-block {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+        .meta-block .field-label {
+            display: inline-block;
+            width: 9ch;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .meta-block .field-value { color: var(--text-primary); }
+        .meta-block .field-md5 { color: var(--text-secondary); cursor: pointer; }
+        .meta-block .field-md5:hover { color: var(--accent); }
+
         .download-links {
-            display: none; margin-top: 10px; padding: 10px;
-            background: #0f0f23; border-radius: 6px;
+            display: none;
+            margin: 8px 0;
+            padding: 8px;
+            background: var(--dl-links-bg);
+            border: 1px solid var(--border-dim);
+            border-radius: 2px;
         }
         .download-links.show { display: block; }
         .download-links a {
-            display: block; color: #00d4ff; text-decoration: none;
-            padding: 4px 0; font-size: 13px;
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 3px 0;
         }
-        .download-links a:hover { text-decoration: underline; }
-        .dl-source { color: #888; font-size: 11px; margin-right: 6px; }
+        .download-links a:hover { color: var(--accent); }
+        .dl-source { color: var(--text-dim); margin-right: 6px; }
 
-        .card-status { margin-top: 6px; font-size: 13px; color: #888; }
-        .card-status.success { color: #28a745; }
-        .card-status.error { color: #ff6b6b; }
+        .row-status {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+        .row-status.success { color: var(--success); }
+        .row-status.error { color: var(--error); }
 
-        /* Library */
-        .library-empty {
-            text-align: center; padding: 40px; color: #666;
+        /* ── LIBRARY ── */
+        .library-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
         }
-        .library-search {
-            margin: 20px 0; display: flex; gap: 10px;
+        .lib-filter {
+            flex: 1;
+            max-width: 320px;
+            padding: 6px 10px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            border: 1px solid var(--border-mid);
+            border-radius: 2px;
+            background: var(--bg-inset);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 100ms linear;
         }
-        .library-search input {
-            flex: 1; padding: 10px 14px; font-size: 14px;
-            border: 2px solid #2a2a4a; border-radius: 8px;
-            background: #0f0f23; color: #e0e0e0; outline: none;
+        .lib-filter::placeholder { color: var(--text-dim); }
+        .lib-filter:focus { border-color: var(--accent); }
+        .lib-hint {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
         }
-        .library-search input:focus { border-color: #00d4ff; }
-        .book-badge {
-            display: inline-block; font-size: 11px; padding: 2px 6px;
-            border-radius: 3px; margin-left: 6px;
+
+        .lib-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--row-sep);
         }
-        .badge-content { background: #1a5276; color: #85c1e9; }
-        .badge-translated { background: #1a4731; color: #82e0aa; }
+        .lib-badges {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 2px;
+            letter-spacing: 0.01em;
+        }
+        .lib-badge { color: var(--success); }
+        .lib-id {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--border-mid);
+            align-self: start;
+            cursor: pointer;
+            padding-top: 2px;
+            transition: color 100ms linear;
+        }
+        .lib-id:hover { color: var(--accent); }
+
+        .empty-state {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--text-dim);
+            padding: 16px 0;
+        }
+
+        /* ── BOTTOM STATUS STRIP ── */
+        .status-strip {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--strip-bg);
+            border-top: 1px solid var(--strip-border);
+            padding: 4px 16px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--text-dim);
+            z-index: 100;
+        }
+        .status-strip .sep { color: var(--border-dim); }
+        .status-strip .key-val .val { color: var(--text-secondary); }
+        .status-strip .spacer { flex: 1; }
+        .status-strip .hint { color: var(--border-mid); }
+
+        /* ── HELP MODAL ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--modal-overlay);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--modal-bg);
+            border: 1px solid var(--border-mid);
+            border-radius: 2px;
+            padding: 20px 24px;
+            max-width: 420px;
+            width: 100%;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .modal h2 {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 14px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .keymap-row {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid var(--row-sep);
+        }
+        .keymap-row:last-child { border-bottom: none; }
+        .keymap-key { color: var(--accent); min-width: 5ch; }
+        .keymap-desc { color: var(--text-secondary); }
+        .modal-close {
+            margin-top: 14px;
+            font-size: 11px;
+            color: var(--text-dim);
+            cursor: pointer;
+        }
+        .modal-close:hover { color: var(--text-primary); }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="layout">
+        <!-- HEADER -->
         <header>
-            <h1>Bookfinder General</h1>
-            <p>Search & Download Research Books</p>
+            <div class="header-top">
+                <div class="wordmark-block">
+                    <span class="wordmark">Bookfinder General</span>
+                    <span class="tagline">Hunts books, not witches.</span>
+                </div>
+                <div class="header-right">
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark">[light]</button>
+                    <div class="header-status" id="headerStatus">—</div>
+                </div>
+            </div>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('search')">Search</button>
+                <button class="tab" onclick="switchTab('library')">Library</button>
+            </div>
         </header>
 
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('search')">Search</button>
-            <button class="tab" onclick="switchTab('library')">Library</button>
-        </div>
+        <!-- MAIN -->
+        <main>
+            <!-- ── SEARCH TAB ── -->
+            <div id="tab-search" class="tab-content active">
+                <div class="search-box">
+                    <div class="search-row">
+                        <input type="text" id="query"
+                               placeholder="Title, author, ISBN, or topic."
+                               autofocus autocomplete="off" spellcheck="false">
+                        <button id="searchBtn" onclick="doSearch()">Search</button>
+                    </div>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Language</label>
+                            <select id="lang">
+                                <option value="">All</option>
+                                <option value="en">English</option>
+                                <option value="de">German</option>
+                                <option value="fr">French</option>
+                                <option value="es">Spanish</option>
+                                <option value="it">Italian</option>
+                                <option value="ru">Russian</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="nl">Dutch</option>
+                                <option value="pl">Polish</option>
+                                <option value="la">Latin</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Format</label>
+                            <select id="ext">
+                                <option value="">All</option>
+                                <option value="pdf">PDF</option>
+                                <option value="epub">EPUB</option>
+                                <option value="mobi">MOBI</option>
+                                <option value="djvu">DJVU</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Type</label>
+                            <select id="content">
+                                <option value="">All</option>
+                                <option value="book_nonfiction">Non-fiction</option>
+                                <option value="book_fiction">Fiction</option>
+                                <option value="magazine">Magazines</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Search Tab -->
-        <div id="tab-search" class="tab-content active">
-            <div class="search-box">
-                <div class="search-row">
-                    <input type="text" id="query" placeholder="Search for books... (titles in any language, authors, topics)" autofocus>
-                    <button id="searchBtn" onclick="doSearch()">Search</button>
-                </div>
-                <div class="filters">
-                    <label>Language
-                        <select id="lang">
-                            <option value="">All</option>
-                            <option value="en">English</option>
-                            <option value="de">German</option>
-                            <option value="fr">French</option>
-                            <option value="es">Spanish</option>
-                            <option value="it">Italian</option>
-                            <option value="ru">Russian</option>
-                            <option value="pt">Portuguese</option>
-                            <option value="nl">Dutch</option>
-                            <option value="pl">Polish</option>
-                            <option value="la">Latin</option>
-                        </select>
-                    </label>
-                    <label>Format
-                        <select id="ext">
-                            <option value="">All</option>
-                            <option value="pdf">PDF</option>
-                            <option value="epub">EPUB</option>
-                            <option value="mobi">MOBI</option>
-                            <option value="djvu">DJVU</option>
-                        </select>
-                    </label>
-                    <label>Type
-                        <select id="content">
-                            <option value="">All</option>
-                            <option value="book_nonfiction">Non-fiction</option>
-                            <option value="book_fiction">Fiction</option>
-                            <option value="magazine">Magazines</option>
-                        </select>
-                    </label>
-                </div>
+                <div id="status" class="status" style="display:none;"></div>
+                <div id="results"></div>
             </div>
 
-            <div id="status" class="status" style="display:none;"></div>
-            <div id="results"></div>
-        </div>
-
-        <!-- Library Tab -->
-        <div id="tab-library" class="tab-content">
-            <div class="library-search">
-                <input type="text" id="libQuery" placeholder="Filter library..." oninput="loadLibrary(this.value)">
+            <!-- ── LIBRARY TAB ── -->
+            <div id="tab-library" class="tab-content">
+                <div class="library-controls">
+                    <input type="text" class="lib-filter" id="libQuery"
+                           placeholder="Filter…" oninput="loadLibrary(this.value)"
+                           autocomplete="off" spellcheck="false">
+                    <span class="lib-hint">/ to focus</span>
+                </div>
+                <div id="library-results"></div>
             </div>
-            <div id="library-results"></div>
+        </main>
+
+        <!-- BOTTOM STATUS STRIP -->
+        <div class="status-strip" id="statusStrip">
+            <span class="key-val">mirror <span class="val" id="stripMirror">—</span></span>
+            <span class="sep">·</span>
+            <span class="key-val">key <span class="val" id="stripKey">—</span></span>
+            <span class="sep">·</span>
+            <span class="key-val" id="stripTiming">—</span>
+            <span class="spacer"></span>
+            <span class="hint">? keymap</span>
+        </div>
+    </div>
+
+    <!-- HELP MODAL -->
+    <div class="modal-overlay" id="helpModal" onclick="closeHelp(event)">
+        <div class="modal">
+            <h2>Keyboard shortcuts</h2>
+            <div class="keymap-row"><span class="keymap-key">/</span><span class="keymap-desc">Focus search</span></div>
+            <div class="keymap-row"><span class="keymap-key">Esc</span><span class="keymap-desc">Clear focus / close</span></div>
+            <div class="keymap-row"><span class="keymap-key">Enter</span><span class="keymap-desc">Submit search</span></div>
+            <div class="keymap-row"><span class="keymap-key">j / k</span><span class="keymap-desc">Select next / prev result</span></div>
+            <div class="keymap-row"><span class="keymap-key">o</span><span class="keymap-desc">Expand selected result</span></div>
+            <div class="keymap-row"><span class="keymap-key">d</span><span class="keymap-desc">Download selected result</span></div>
+            <div class="keymap-row"><span class="keymap-key">l</span><span class="keymap-desc">Jump to Library tab</span></div>
+            <div class="keymap-row"><span class="keymap-key">?</span><span class="keymap-desc">Toggle this panel</span></div>
+            <div class="modal-close" onclick="document.getElementById('helpModal').classList.remove('open')">[ close ]</div>
         </div>
     </div>
 
     <script>
-        const queryEl = document.getElementById('query');
-        queryEl.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+        // ── THEME INIT (runs before paint to avoid flash) ──
+        (function() {
+            const stored = localStorage.getItem('bf-theme');
+            const theme = stored || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
 
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('bf-theme', next);
+            document.getElementById('themeToggle').textContent = next === 'light' ? '[light]' : '[dark]';
+        }
+
+        // Sync toggle label on page load
+        (function() {
+            const theme = document.documentElement.getAttribute('data-theme');
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('themeToggle').textContent = theme === 'light' ? '[light]' : '[dark]';
+            });
+        })();
+
+        // ── ESCAPE ──
+        function esc(s) {
+            if (typeof s !== 'string') return s ?? '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // ── TAB SWITCHING ──
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
             document.getElementById('tab-' + tab).classList.add('active');
             if (tab === 'library') loadLibrary();
         }
 
+        // ── RESULT-ROW SELECTION ──
+        let selectedIdx = -1;
+        let resultRows = [];
+
+        function selectRow(idx) {
+            const selectedBg = getComputedStyle(document.documentElement)
+                .getPropertyValue('--row-selected').trim();
+            resultRows.forEach((r, i) => {
+                r.style.background = i === idx ? selectedBg : '';
+            });
+            selectedIdx = idx;
+        }
+
+        // ── SEARCH ──
         async function doSearch() {
-            const q = queryEl.value.trim();
+            const q = document.getElementById('query').value.trim();
             if (!q) return;
 
-            const lang = document.getElementById('lang').value;
-            const ext = document.getElementById('ext').value;
+            const lang    = document.getElementById('lang').value;
+            const ext     = document.getElementById('ext').value;
             const content = document.getElementById('content').value;
-            const btn = document.getElementById('searchBtn');
-            const status = document.getElementById('status');
-            const results = document.getElementById('results');
+            const btn     = document.getElementById('searchBtn');
+            const statusEl= document.getElementById('status');
+            const resultsEl= document.getElementById('results');
 
-            btn.disabled = true; btn.textContent = 'Searching...';
-            status.style.display = 'block'; status.className = 'status';
-            status.innerHTML = '<span class="spinner"></span> Searching... (a browser window may open briefly)';
-            results.innerHTML = '';
+            btn.disabled = true; btn.textContent = 'Searching…';
+            statusEl.style.display = 'block'; statusEl.className = 'status';
+            statusEl.innerHTML = '<span class="searching-indicator">searching annas-archive.gl via playwright</span>';
+            resultsEl.innerHTML = '';
+            resultRows = []; selectedIdx = -1;
+            updateStripTiming('searching…');
 
+            const t0 = performance.now();
             try {
                 const params = new URLSearchParams({ q, lang, ext, content });
                 const resp = await fetch('/api/search?' + params);
                 const data = await resp.json();
+                const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+                updateStripTiming('search: ' + elapsed + 's');
 
                 if (data.error) {
-                    status.className = 'status error';
-                    status.textContent = 'Error: ' + data.error;
+                    statusEl.className = 'status error';
+                    statusEl.textContent = 'Error: ' + data.error;
                     return;
                 }
-                if (data.results.length === 0) {
-                    status.textContent = 'No results found. Try different search terms.';
+                if (!data.results || data.results.length === 0) {
+                    statusEl.textContent = 'No results. Try the author\'s surname plus one keyword from the title.';
                     return;
                 }
 
-                status.style.display = 'none';
-                results.innerHTML = `<div class="results-count">Found ${data.results.length} results</div>`;
-                data.results.forEach(r => results.appendChild(createResultCard(r)));
+                statusEl.style.display = 'none';
+                resultsEl.innerHTML = `<div class="results-header">
+                    <span class="count">${data.results.length}</span> result${data.results.length !== 1 ? 's' : ''}
+                </div><div class="results-list" id="resultList"></div>`;
+
+                const list = document.getElementById('resultList');
+                data.results.forEach((r, i) => {
+                    const { row, detail } = createResultRow(r, i);
+                    list.appendChild(row);
+                    list.appendChild(detail);
+                    resultRows.push(row);
+                });
             } catch (err) {
-                status.className = 'status error';
-                status.textContent = 'Connection error: ' + err.message;
+                statusEl.className = 'status error';
+                statusEl.textContent = 'Connection error: ' + err.message;
+                updateStripTiming('error');
             } finally {
                 btn.disabled = false; btn.textContent = 'Search';
             }
         }
 
-        function createResultCard(r) {
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            card.innerHTML = `
-                <div class="result-title">${esc(r.title)}</div>
-                ${r.author ? `<div class="result-author">by ${esc(r.author)}</div>` : ''}
-                <div class="result-meta">
-                    ${r.year ? `<span>${esc(r.year)}</span>` : ''}
-                    ${r.extension ? `<span>${esc(r.extension.toUpperCase())}</span>` : ''}
-                    ${r.filesize ? `<span>${esc(r.filesize)}</span>` : ''}
-                    ${r.language ? `<span>${esc(r.language)}</span>` : ''}
+        function createResultRow(r, idx) {
+            const isTop = idx < 3;
+            const md5 = r.md5 || ('row' + idx);
+
+            // Main row
+            const row = document.createElement('div');
+            row.className = 'result-row' + (isTop ? ' top-match' : '');
+            row.dataset.idx = idx;
+            row.innerHTML = `
+                <div class="result-main">
+                    <div class="result-title-line">
+                        ${isTop ? '<span class="top-marker">*</span>' : ''}
+                        <span class="result-title" title="${esc(r.title)}">${esc(r.title)}</span>
+                        ${r.author ? `<span class="result-author">${esc(r.author)}</span>` : ''}
+                    </div>
+                    <div class="result-biblio">
+                        ${r.year ? esc(r.year) : ''}${r.year ? '<span class="sep">·</span>' : ''}${r.language ? esc(r.language) : ''}${r.language ? '<span class="sep">·</span>' : ''}${r.extension ? esc(r.extension.toUpperCase()) : ''}${r.extension ? '<span class="sep">·</span>' : ''}${r.filesize ? esc(r.filesize) : ''}
+                    </div>
                 </div>
                 <div class="result-actions">
-                    <button class="btn-download" onclick="downloadToLibrary(this, ${esc(JSON.stringify(JSON.stringify(r)))})">
-                        Download to Library
+                    <button class="btn-dl" id="dl-${esc(md5)}"
+                        onclick="event.stopPropagation(); downloadRow(this, ${esc(JSON.stringify(JSON.stringify(r)))}, '${esc(md5)}')">
+                        Download
                     </button>
-                    <button class="btn-outline" onclick="toggleLinks('${r.md5}', this)">
-                        Manual Download Links
+                    <button class="btn-text" id="links-btn-${esc(md5)}"
+                        onclick="event.stopPropagation(); toggleLinks('${esc(md5)}', this)">
+                        Links
                     </button>
                 </div>
-                <div class="download-links" id="links-${r.md5}"></div>
-                <div class="card-status" id="status-${r.md5}"></div>
             `;
-            return card;
+            row.addEventListener('click', () => {
+                selectRow(idx);
+                toggleDetail(md5);
+            });
+
+            // Detail panel
+            const detail = document.createElement('div');
+            detail.className = 'row-detail';
+            detail.id = 'detail-' + md5;
+            detail.innerHTML = `
+                <div class="detail-inner">
+                    <div class="meta-block">
+                        <div><span class="field-label">TITLE</span><span class="field-value">${esc(r.title)}</span></div>
+                        ${r.author    ? `<div><span class="field-label">AUTHOR</span><span class="field-value">${esc(r.author)}</span></div>` : ''}
+                        ${r.year      ? `<div><span class="field-label">YEAR</span><span class="field-value">${esc(r.year)}</span></div>` : ''}
+                        ${r.language  ? `<div><span class="field-label">LANGUAGE</span><span class="field-value">${esc(r.language)}</span></div>` : ''}
+                        ${r.extension ? `<div><span class="field-label">FORMAT</span><span class="field-value">${esc(r.extension.toUpperCase())}</span></div>` : ''}
+                        ${r.filesize  ? `<div><span class="field-label">SIZE</span><span class="field-value">${esc(r.filesize)}</span></div>` : ''}
+                        ${r.md5       ? `<div><span class="field-label">MD5</span><span class="field-value field-md5" title="Click to copy" onclick="copyText('${esc(r.md5)}')">${esc(r.md5)}</span></div>` : ''}
+                    </div>
+                    <div class="download-links" id="links-${esc(md5)}"></div>
+                    <div class="row-status" id="status-${esc(md5)}"></div>
+                </div>
+            `;
+
+            return { row, detail };
         }
 
-        async function downloadToLibrary(btn, bookJson) {
-            const book = JSON.parse(bookJson);
-            const statusEl = document.getElementById('status-' + book.md5);
+        function toggleDetail(md5) {
+            const el = document.getElementById('detail-' + md5);
+            if (!el) return;
+            el.classList.toggle('open');
+        }
 
-            btn.disabled = true; btn.textContent = 'Downloading...';
-            statusEl.textContent = 'Downloading and processing (this may take a minute)...';
-            statusEl.className = 'card-status';
+        // ── DOWNLOAD ──
+        async function downloadRow(btn, bookJson, md5) {
+            const book = JSON.parse(bookJson);
+            const statusEl = document.getElementById('status-' + md5);
+
+            btn.disabled = true; btn.textContent = 'Downloading…';
+            if (statusEl) { statusEl.textContent = 'Downloading…'; statusEl.className = 'row-status'; }
 
             try {
                 const resp = await fetch('/api/download', {
@@ -322,105 +877,186 @@
                 const data = await resp.json();
 
                 if (data.error) {
-                    statusEl.textContent = 'Error: ' + data.error;
-                    statusEl.className = 'card-status error';
-                    btn.disabled = false; btn.textContent = 'Retry Download';
+                    if (statusEl) { statusEl.textContent = 'Error: ' + data.error; statusEl.className = 'row-status error'; }
+                    btn.disabled = false; btn.textContent = 'Retry';
                     return;
                 }
 
-                let msg = data.status === 'already_downloaded' ? 'Already in library!' : 'Downloaded & processed!';
+                let msg = data.status === 'already_downloaded' ? 'Already in library.' : 'Downloaded.';
                 if (data.has_content) msg += ' Text extracted.';
-                if (data.has_translation) msg += ' Translated to English.';
+                if (data.has_translation) msg += ' Translated.';
 
-                statusEl.textContent = msg;
-                statusEl.className = 'card-status success';
-                btn.textContent = 'In Library';
+                if (statusEl) { statusEl.textContent = msg; statusEl.className = 'row-status success'; }
+                btn.textContent = data.status === 'already_downloaded' ? '✓ Library' : '✓ Done';
+                btn.classList.add(data.status === 'already_downloaded' ? 'already' : 'success');
             } catch (err) {
-                statusEl.textContent = 'Error: ' + err.message;
-                statusEl.className = 'card-status error';
-                btn.disabled = false; btn.textContent = 'Retry Download';
+                if (statusEl) { statusEl.textContent = 'Error: ' + err.message; statusEl.className = 'row-status error'; }
+                btn.disabled = false; btn.textContent = 'Retry';
             }
         }
 
+        // ── LINKS PANEL ──
         async function toggleLinks(md5, btn) {
             const container = document.getElementById('links-' + md5);
+            if (!container) return;
+
+            // Ensure detail is open
+            const detail = document.getElementById('detail-' + md5);
+            if (detail && !detail.classList.contains('open')) detail.classList.add('open');
+
             if (container.classList.contains('show')) {
-                container.classList.remove('show');
-                return;
+                container.classList.remove('show'); return;
             }
 
-            btn.textContent = 'Loading...'; btn.disabled = true;
-
+            btn.textContent = 'Loading…'; btn.disabled = true;
             try {
-                const resp = await fetch('/api/links?md5=' + md5);
+                const resp = await fetch('/api/links?md5=' + encodeURIComponent(md5));
                 const data = await resp.json();
-
                 if (data.links && data.links.length > 0) {
                     container.innerHTML = data.links.map(l =>
                         `<a href="${esc(l.url)}" target="_blank" rel="noopener">
-                            <span class="dl-source">[${esc(l.source)}]</span>
-                            ${esc(l.url.length > 80 ? l.url.substring(0, 80) + '...' : l.url)}
+                            <span class="dl-source">[${esc(l.source)}]</span>${esc(l.url.length > 90 ? l.url.substring(0, 90) + '…' : l.url)}
                         </a>`
                     ).join('');
-                    container.classList.add('show');
                 } else {
-                    container.innerHTML = '<span style="color:#888">No download links found.</span>';
-                    container.classList.add('show');
+                    container.innerHTML = '<span style="color:var(--text-dim)">No download links found.</span>';
                 }
+                container.classList.add('show');
             } catch (err) {
-                container.innerHTML = '<span style="color:#ff6b6b">Error loading links.</span>';
+                container.innerHTML = `<span style="color:var(--error)">Error loading links.</span>`;
                 container.classList.add('show');
             } finally {
-                btn.textContent = 'Manual Download Links'; btn.disabled = false;
+                btn.textContent = 'Links'; btn.disabled = false;
             }
         }
 
+        // ── LIBRARY ──
         async function loadLibrary(query = '') {
             const container = document.getElementById('library-results');
             const params = query ? '?q=' + encodeURIComponent(query) : '';
-
             try {
                 const resp = await fetch('/api/library' + params);
                 const data = await resp.json();
-
                 if (!data.books || data.books.length === 0) {
-                    container.innerHTML = `<div class="library-empty">
-                        ${query ? 'No matching books.' : 'Your library is empty. Search and download some books!'}
-                    </div>`;
+                    container.innerHTML = `<div class="empty-state">${query ? 'No matching books.' : 'Library empty. Search and download to begin.'}</div>`;
                     return;
                 }
-
-                container.innerHTML = `<div class="results-count">${data.books.length} book(s) in library</div>`;
-                data.books.forEach(b => {
-                    const card = document.createElement('div');
-                    card.className = 'result-card';
-                    card.innerHTML = `
-                        <div class="result-title">
-                            ${esc(b.title)}
-                            ${b.has_content ? '<span class="book-badge badge-content">Text Extracted</span>' : ''}
-                            ${b.has_translation ? '<span class="book-badge badge-translated">Translated</span>' : ''}
-                        </div>
-                        ${b.author ? `<div class="result-author">by ${esc(b.author)}</div>` : ''}
-                        <div class="result-meta">
-                            ${b.year ? `<span>${esc(b.year)}</span>` : ''}
-                            ${b.format ? `<span>${esc(b.format.toUpperCase())}</span>` : ''}
-                            ${b.language ? `<span>${esc(b.language)}</span>` : ''}
-                        </div>
-                        <div style="font-size:12px;color:#666;margin-top:4px">ID: ${esc(b.id)}</div>
-                    `;
-                    container.appendChild(card);
-                });
+                container.innerHTML = `<div class="results-header"><span class="count">${data.books.length}</span> volume${data.books.length !== 1 ? 's' : ''}</div>
+                    <div class="results-list">` +
+                    data.books.map(b => {
+                        const badges = [
+                            b.has_content ? '<span class="lib-badge">[text]</span>' : '',
+                            b.has_translation ? '<span class="lib-badge">[translated]</span>' : '',
+                            b.has_summary ? '<span class="lib-badge">[summarized]</span>' : '',
+                        ].filter(Boolean).join(' · ');
+                        return `<div class="lib-row">
+                            <div class="result-main">
+                                <div class="result-title-line">
+                                    <span class="result-title" title="${esc(b.title)}">${esc(b.title)}</span>
+                                    ${b.author ? `<span class="result-author">${esc(b.author)}</span>` : ''}
+                                </div>
+                                <div class="result-biblio">
+                                    ${b.year ? esc(b.year) + '<span class="sep">·</span>' : ''}${b.language ? esc(b.language) + '<span class="sep">·</span>' : ''}${b.format ? esc(b.format.toUpperCase()) : ''}
+                                </div>
+                                ${badges ? `<div class="lib-badges">${badges}</div>` : ''}
+                            </div>
+                            <span class="lib-id" title="Click to copy ID" onclick="copyText('${esc(b.id)}')">${esc((b.id || '').substring(0,8))}</span>
+                        </div>`;
+                    }).join('') + '</div>';
             } catch (err) {
-                container.innerHTML = `<div class="library-empty" style="color:#ff6b6b">Error loading library.</div>`;
+                container.innerHTML = `<div class="empty-state" style="color:var(--error)">Error loading library.</div>`;
             }
         }
 
-        function esc(s) {
-            if (typeof s !== 'string') return s;
-            const d = document.createElement('div');
-            d.textContent = s;
-            return d.innerHTML;
+        // ── COPY UTILITY ──
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {}).catch(() => {});
         }
+
+        // ── STATUS STRIP ──
+        function updateStripTiming(msg) {
+            document.getElementById('stripTiming').textContent = msg;
+        }
+
+        async function initStatusStrip() {
+            try {
+                const resp = await fetch('/api/status');
+                const data = await resp.json();
+                if (data.mirror) document.getElementById('stripMirror').textContent = data.mirror;
+                if (data.annas_key !== undefined) {
+                    document.getElementById('stripKey').textContent = data.annas_key ? 'set' : 'none';
+                }
+            } catch (e) {
+                // strip stays at defaults
+            }
+        }
+
+        // ── HELP MODAL ──
+        function closeHelp(e) {
+            if (e.target === document.getElementById('helpModal')) {
+                document.getElementById('helpModal').classList.remove('open');
+            }
+        }
+
+        // ── KEYBOARD SHORTCUTS ──
+        document.addEventListener('keydown', e => {
+            const active = document.activeElement;
+            const inInput = active && (active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA');
+
+            if (e.key === '?') {
+                document.getElementById('helpModal').classList.toggle('open');
+                return;
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('helpModal').classList.remove('open');
+                if (inInput) active.blur();
+                return;
+            }
+            if (e.key === '/' && !inInput) {
+                e.preventDefault();
+                const q = document.getElementById('query');
+                switchTab('search');
+                q.focus();
+                return;
+            }
+            if (e.key === 'l' && !inInput) {
+                switchTab('library');
+                return;
+            }
+            if (!inInput && resultRows.length > 0) {
+                if (e.key === 'j') {
+                    e.preventDefault();
+                    selectRow(Math.min(selectedIdx + 1, resultRows.length - 1));
+                    return;
+                }
+                if (e.key === 'k') {
+                    e.preventDefault();
+                    selectRow(Math.max(selectedIdx - 1, 0));
+                    return;
+                }
+                if (e.key === 'o' && selectedIdx >= 0) {
+                    resultRows[selectedIdx].click();
+                    return;
+                }
+                if (e.key === 'd' && selectedIdx >= 0) {
+                    const dlBtn = resultRows[selectedIdx].querySelector('.btn-dl');
+                    if (dlBtn && !dlBtn.disabled) dlBtn.click();
+                    return;
+                }
+            }
+            if (e.key === 'Enter' && inInput && active.id === 'query') {
+                doSearch();
+            }
+        });
+
+        // ── INIT ──
+        initStatusStrip();
+        document.getElementById('query').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doSearch();
+        });
+        // Sync toggle label after DOM ready (theme attr already set by inline script above)
+        document.getElementById('themeToggle').textContent =
+            document.documentElement.getAttribute('data-theme') === 'light' ? '[light]' : '[dark]';
     </script>
 </body>
 </html>
