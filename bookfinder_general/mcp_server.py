@@ -614,6 +614,79 @@ def save_research_brief(
     return json.dumps(result, ensure_ascii=False)
 
 
+@mcp.tool()
+def prepare_book_for_skill(book_id: str) -> str:
+    """Prepare a library book for conversion into an agent skill.
+
+    Checks that the book exists and has extracted text, runs an extraction-health
+    probe (clean / degraded / rubble), and returns the content path plus guidance
+    for generating a skill with the `book-to-methodology-skill` recipe. This does
+    NOT generate the skill — skill generation is an agent task, not a server task;
+    this tool hands the calling LLM the inputs and the recipe pointer.
+
+    Args:
+        book_id: The book's library ID (from list_library or download_book).
+
+    Returns:
+        JSON with the content path(s), an extraction-health verdict, and next-step
+        instructions pointing at the book-to-methodology-skill recipe.
+    """
+    try:
+        book = get_book(book_id)
+        if not book:
+            return json.dumps({"error": f"Book '{book_id}' not found in library."})
+
+        content_path = book.content_path
+        if not book.has_content or not os.path.isfile(content_path):
+            return json.dumps({
+                "error": "No extracted text for this book.",
+                "hint": "Re-download as EPUB (search sorts EPUB-first) — large scanned PDFs often have no extractable text.",
+            })
+
+        with open(content_path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+        lines = text.splitlines() or [""]
+        garbage = sum(1 for line in lines if line.count("|") > 3 or line.count("`") > 2)
+        garbage_pct = round(100 * garbage / len(lines), 1)
+        words = len(text.split())
+
+        if garbage_pct >= 30 or (words < 5000 and len(text) < 50000):
+            verdict = "rubble"
+            rec = ("Extraction is degraded (likely a scanned-image PDF). Re-acquire this book "
+                   "as an EPUB via search_books/download_book before building a skill — do not "
+                   "build a calculator from this text; its tables/formulas did not survive.")
+        elif garbage_pct >= 10 or words < 8000:
+            verdict = "degraded"
+            rec = "Usable for a reference skill; build a calculator only from prose-verifiable figures."
+        else:
+            verdict = "clean"
+            rec = ("Clean text — safe to build a full study-skill or, if the book has a "
+                   "quantitative model, a methodology-skill with a validated calculator.")
+
+        result = {
+            "book_id": book.id,
+            "title": book.title,
+            "author": book.author,
+            "content_path": content_path,
+            "chars": len(text),
+            "words": words,
+            "garbage_pct": garbage_pct,
+            "extraction_verdict": verdict,
+            "recommendation": rec,
+            "recipe": "skills/book-to-methodology-skill/SKILL.md",
+            "next_step": (
+                "If verdict is 'clean' or 'degraded', follow the book-to-methodology-skill "
+                "recipe on content_path to generate the skill. If 'rubble', re-download the "
+                "book as an EPUB first."
+            ),
+        }
+        if book.has_translation:
+            result["translated_path"] = book.translated_path
+        return json.dumps(result, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"prepare_book_for_skill failed: {e}"})
+
+
 def run_server():
     """Start the MCP server."""
     _validate_deps()
