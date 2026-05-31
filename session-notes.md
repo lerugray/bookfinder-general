@@ -1,5 +1,81 @@
 # Session Notes
 
+## 2026-05-31 — Mac setup recovery + Book→Skill feature (v0.2.0)
+
+First substantial session on the Mac (Mac-Neo). Two halves: get BG working
+here, then build a new feature on top of it.
+
+### Both MCP servers were dead on the Mac (ENOENT)
+Repo is Windows-authored; `.mcp.json` didn't match this machine.
+- `bookfinder-general`: `command: "python"` — but this Mac has no `python`,
+  only `/opt/homebrew/bin/python3`. And `mcp` + deps were never installed here
+  (the `.venv` only had playwright). Two failures stacked.
+- `raybrain`: `node` pointing at a `C:/Users/rweis/...` path that can't exist
+  on Mac. Windows-only server.
+
+Fixes:
+- `.venv/bin/pip install -e ".[browser]"` + `playwright install chromium`
+  (Python 3.14; all pins resolved).
+- `.mcp.json` `bookfinder-general.command` → absolute `.venv/bin/python`. This
+  edit is Mac-specific, so `git update-index --skip-worktree .mcp.json` — it
+  never reaches Windows and won't accidentally commit.
+- raybrain disabled on Mac via `.claude/settings.local.json`
+  (`enabledMcpjsonServers` = just bookfinder-general).
+- Verified with a real stdio handshake (all tools advertised).
+
+### Environment recovered
+- `ANNAS_KEY` wasn't in any live config here (only a doc placeholder in old
+  transcripts). Real key recovered from the PC over the homelab — `ssh home-pc`
+  (WSL on DESKTOP-MM0B3G2, Tailscale; Windows files at `/mnt/c`), read from the
+  PC's `~/.claude/settings.json`, written to the Mac's `~/.claude/settings.json`
+  env block.
+- Library: the text-only clone lives at `~/Desktop/Dev Work/bookfinder-library`
+  (54 books on the Mac; PC has 81). `BOOKFINDER_LIBRARY` set to it in
+  settings.json env. (Default `~/Research/BookFinder` doesn't exist on the Mac.)
+
+### Book → Skill feature (shipped as v0.2.0)
+Studied `virgiliojr94/book-to-skill` and assessed forking it for a computational
+"methodology-skill" — a skill that *runs* a book's quantitative method, not just
+explains it.
+
+Key finding: feasibility is decided by extraction quality. Dupuy's *Numbers,
+Predictions and War* is a scanned-image PDF → OCR rubble (appendix tables came
+out as rotated noise) → no calculator possible. Clean EPUBs extract as real text
+→ they work. Same EPUB-first lesson the search ranking already encodes.
+
+Built two worked examples end-to-end (BG search→download→extract, then generate
+the skill):
+- `macedonian-logistics-advisor` (Engels) — consumption/range model; selftest
+  reproduces Engels's own pack-animal figures (1,121 / 40,350 / 107,600).
+- `macedonian-phalanx-advisor` (Taylor) — formation geometry (a deliberately
+  *different* computation, to harden the template); selftest reproduces the
+  syntagma (256 = 16×16) and Polybius's projecting ranks.
+
+Both share one file layout (`SKILL.md` · `data/<model>.json` · `scripts/advise.py`
+with compute+feasibility+selftest · `reference/` · `glossary` · `cheatsheet` ·
+`PROVENANCE`). That shared scaffold is the extractable generator.
+
+Productized → PR #1 → merged → **v0.2.0** (GitHub release cut):
+- `skills/book-to-methodology-skill/` — generator recipe + `extract_health.py`
+  (the clean/degraded/rubble probe).
+- `skills/examples/` — the two advisors as living templates.
+- 10th MCP tool `prepare_book_for_skill(book_id)` — health-checks a book and
+  hands the agent content + recipe; generation stays agent-side, NOT in the
+  server (preserves the stdout-is-JSON-RPC discipline).
+- README "Book → Skill" section; tool count 9→10; version 0.1.0→0.2.0.
+- pytest 4/4, ruff clean (package + skills).
+
+### Key decisions / notes
+- Generator deliberately lives OUTSIDE the MCP Python package (different
+  lifecycle; the server is reserved for search/download/library + its hard
+  stdout rule). It composes with BG: BG makes `content.md`, the recipe consumes it.
+- Methodology-skill honesty gate: every coefficient is provenance-tagged, and
+  the calculator's selftest must reproduce the book's own worked numbers or it
+  doesn't ship.
+- On the Mac, `python` isn't on PATH — use `.venv/bin/python` (or `python3`).
+
+---
+
 ## 2026-03-25 — MCP portability overhaul
 
 ### Cross-machine portability fixes
