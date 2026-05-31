@@ -8,7 +8,7 @@ Research book finder, downloader, processor, and summarizer. Named after the Wit
 - `pymupdf4llm` — PDF-to-Markdown extraction
 - `deep-translator` — auto-translation (Google Translate)
 - `fpdf2` — PDF report generation
-- `mcp` SDK — MCP server (9 tools)
+- `mcp` SDK — MCP server (10 tools)
 - `flask` — web UI
 - `rich` — CLI
 - stop-slop rules embedded in summarizer
@@ -16,7 +16,7 @@ Research book finder, downloader, processor, and summarizer. Named after the Wit
 ## Project Structure
 ```
 bookfinder_general/
-  mcp_server.py      # MCP server (9 tools)
+  mcp_server.py      # MCP server (10 tools)
   search.py          # Anna's Archive search
   browser.py         # Playwright automation
   download.py        # Download with mirror fallback
@@ -33,9 +33,10 @@ main.py              # CLI entry
 START.bat            # Windows launcher
 ```
 
-## MCP Tools (9)
+## MCP Tools (10)
 search_books, download_book, list_library, read_book, search_book_content,
-summarize_book, summarize_topic, save_book_summary, save_research_brief
+summarize_book, summarize_topic, save_book_summary, save_research_brief,
+prepare_book_for_skill
 
 ## EPUB Preference
 Search results are sorted with EPUB first. EPUBs are real text (HTML in a zip)

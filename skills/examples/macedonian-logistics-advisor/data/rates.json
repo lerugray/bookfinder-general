@@ -1,0 +1,58 @@
+{
+  "_source": "Donald W. Engels, Alexander the Great and the Logistics of the Macedonian Army (Univ. of California Press, 1978)",
+  "_provenance": "Figures recovered from the book's narrative and footnotes. Appendix 5 'Statistical Tables' (Tables 1-8) and the inline 'see table 7' references did NOT survive EPUB/PDF extraction; all values below come from prose, not the master tables. prov tags: engels-stated = a figure Engels adopts; engels-derived = a figure Engels calculates/concludes. See ../PROVENANCE.md.",
+  "_units": "weight = pounds (lb); water = Imperial gallons (1 Imp gal = 10 lb); distance = miles; time = days. cite = line number(s) in the source content.md.",
+
+  "consumption_per_day": {
+    "soldier":        {"grain_lb": 3,   "water_gal": 0.5, "forage_lb": 0,  "prov": "engels-stated",  "cite": "L1991,L197", "note": "2 qt/day water floor cannot be cut for untrained troops in desert"},
+    "cavalry_horse":  {"grain_lb": 10,  "water_gal": 8,   "forage_lb": 10, "prov": "engels-stated",  "cite": "L1993,L224", "note": "water swings 5-15 gal with heat; 8 is the working average"},
+    "pack_mule":      {"grain_lb": 10,  "water_gal": 8,   "forage_lb": 10, "prov": "engels-stated",  "cite": "L255,L1997", "note": "pack animal rationed as a cavalry horse; a minimum, not reducible"},
+    "camel":          {"grain_lb": 10,  "water_gal": 10,  "forage_lb": 25, "prov": "engels-stated",  "cite": "L249,L1995", "note": "grain/straw trade off: 0 grain -> 70 lb straw; water-endurance is overstated"},
+    "elephant":       {"grain_lb": 500, "water_gal": 60,  "forage_lb": 0,  "prov": "engels-stated",  "cite": "L3287"},
+    "ox_team":        {"grain_lb": 100, "water_gal": null,"forage_lb": 0,  "prov": "engels-stated",  "cite": "L3918", "note": "per 2-ox cart team; oxen banned by Alexander (too slow), given for comparison only"}
+  },
+
+  "carrying_capacity_lb": {
+    "soldier":            {"total": 80,  "usable_supplies": 30, "prov": "engels-stated", "cite": "L1983,L2021", "note": "~80 lb total incl. panoply; ~30 lb can be food"},
+    "pack_horse_mule":    {"total": 200, "prov": "engels-stated", "cite": "L1949"},
+    "camel":              {"total": 300, "prov": "engels-stated", "cite": "L1949"},
+    "average_pack_animal":{"total": 250, "daily_self_consumption_lb": 20, "prov": "engels-stated", "cite": "L1953,L2000", "note": "modeling unit; eats 10 grain + 10 forage of its own load per day"},
+    "two_ox_cart_pull":   {"total": 1100,"prov": "engels-stated", "cite": "L3918", "note": "1000-1200 lb pull but 2 mph / 5 hr-day; cannot hold the march rate; banned"}
+  },
+
+  "march_rates_mpd": {
+    "long_haul_average":  {"value": 13,   "prov": "engels-derived", "cite": "L7222", "note": "over long distances incl. mandatory rest days"},
+    "planning_rate":      {"value": 15,   "prov": "engels-stated",  "cite": "L1962,L4435", "note": "daily marching rate with 1 day's halt in 7"},
+    "short_distance":     {"value": 14,   "prov": "engels-derived", "cite": "L7222", "note": "when long halts need not be made"},
+    "whole_army_max":     {"value": 19.5, "prov": "engels-stated",  "cite": "L2379,L7222", "note": "absolute ceiling, Sinai; achieved ONLY because the fleet carried supplies"},
+    "small_light_unit":   {"value": 45,   "prov": "engels-stated",  "cite": "L7220", "note": "40-50 mpd; detached light units only, never the whole army"},
+    "infantry_walk_mph":  {"value": 2.75, "prov": "engels-stated",  "cite": "L7220", "note": "2.5-3 mph on the move; NOT a daily rate"}
+  },
+
+  "operational_limits": {
+    "self_carry_grain_days":        {"practical": 10, "theoretical": 25,   "absolute_ceiling": 14, "prov": "engels-derived", "cite": "L2003,L2103", "note": "water+forage available; only grain carried. Diverges at N=25 (animal eats its 250-lb load at 10 lb grain/day)"},
+    "self_carry_grain_forage_days": {"practical": 7,  "theoretical": 12.5,  "prov": "engels-derived", "cite": "L2011", "note": "water available, no grazing; diverges at N=12.5 (eats 20 lb/day)"},
+    "full_desert_days":             {"half_ration": 4, "full_ration": 2,    "prov": "engels-derived", "cite": "L2034", "note": "no grain, forage, or water available - the central result of the book"},
+    "max_waterless_interval_days":  {"value": 4, "approx_miles": 120,        "prov": "engels-derived", "cite": "L2624", "note": "no caravan account exceeds 4 waterless days"},
+    "economic_resupply_radius_miles":{"value": 70, "range": "60-80",         "prov": "engels-derived", "cite": "L3420,L4952", "note": "beyond this an overland convoy eats more than it delivers (net-zero at ~75 mi)"},
+    "rest_day_every_n_days":        {"value": 6, "range": "5-7",             "prov": "engels-stated",  "cite": "L7194", "note": "animals cannot bear loads >5-7 consecutive days"},
+    "max_pack_animals_fielded":     {"value": 20000,                         "prov": "engels-derived", "cite": "L2007", "note": "more would make the column longer than a day's march"},
+    "consumption_to_carry_ratio":   {"value": "1:10",                        "prov": "engels-derived", "cite": "L243", "note": "constant regardless of animal size; sets the desert range limit"}
+  },
+
+  "model_constants": {
+    "pack_animal_capacity_lb": 250,
+    "pack_animal_grain_self_lb_per_day": 10,
+    "pack_animal_forage_self_lb_per_day": 10,
+    "imperial_gal_to_lb": 10,
+    "_note": "advise.py uses these to reproduce Engels's self-carry explosion: animals_needed = grain_per_day * N / (250 - 10*N) for grain-only terrain (reproduces his 1,121 / 40,350 / 107,600 figures)."
+  },
+
+  "unit_conversions": [
+    "1 choinix grain = 1.92 pints = 1.5 lb (Engels works in choinices + lb, not medimnus/artaba)",
+    "1 stade ~= 600 ft (Engels finds no evidence for a short Macedonian stade); ~8.7 stades/mile",
+    "1 parasang ~= 3 miles",
+    "1 talent ~= 80 lb; largest 5th-c. merchant ship ~= 10,000 talents ~= 400 tons",
+    "1 Imperial gallon water = 10 lb = 1.20 US gallons; desert minimum 2 Imp qt/day = 0.5 Imp gal"
+  ]
+}

@@ -34,7 +34,7 @@ Second, most PDFs on Anna's Archive are scanned images, not extractable text. `p
 
 Third, LLM summaries of non-fiction default to a recognizable boilerplate: "delve into," "it's worth noting," "navigate the complexities." The summarizer ships with [stop-slop](https://github.com/hardikpandya/stop-slop) rules baked into the prompt, which strip most of the obvious tells. Summaries still read like summaries, but they read less like an LLM wrote them.
 
-Bookfinder doesn't do anything Anna's Archive, `pymupdf4llm`, and an LLM can't do on their own. It does the glue work: right result, clean text, readable prose. The MCP server exposes nine tools so any MCP-compatible client can call any step directly, or the whole pipeline end-to-end.
+Bookfinder doesn't do anything Anna's Archive, `pymupdf4llm`, and an LLM can't do on their own. It does the glue work: right result, clean text, readable prose. The MCP server exposes ten tools so any MCP-compatible client can call any step directly, or the whole pipeline end-to-end.
 
 ---
 
@@ -170,6 +170,27 @@ Then ask your AI:
 | `summarize_topic` | Prepare multi-book content for topic synthesis |
 | `save_book_summary` | Save a generated summary as Markdown + polished PDF |
 | `save_research_brief` | Save a cross-book topic brief as Markdown + PDF |
+| `prepare_book_for_skill` | Health-check a library book and prep it for the Book → Skill generator |
+
+---
+
+## Book → Skill
+
+Downloading a book is the start, not the end. The [`skills/`](skills/) directory turns a book you've pulled into the library into a reusable skill your AI loads on demand — built from the actual text, not its training-data memory of the book.
+
+Two kinds come out, depending on the book:
+
+- A **study-skill** for any clean book: the author's frameworks, a glossary, and a chapter index that loads the right chapter when you ask about a topic.
+- A **methodology-skill** for books with a quantitative model: all of that, plus a small calculator that *runs* the book's method. Every number is tagged with where it came from, and the calculator ships a `selftest` that has to reproduce the book's own worked figures — if it can't, it isn't trusted.
+
+The catch is extraction quality, and the `prepare_book_for_skill` tool checks it first. A clean EPUB becomes a real calculator; a scanned-image PDF, whose tables come out as noise, becomes a reference at best — so the probe tells you to re-grab the EPUB before building anything on sand. (Same reason search sorts EPUB-first.)
+
+Two worked examples ship in [`skills/examples/`](skills/examples/), both built from library books:
+
+- **`macedonian-logistics-advisor`** (Engels, *Alexander the Great and the Logistics of the Macedonian Army*) — computes an army's daily grain/water/forage, the pack-animals needed to carry it, how far it can march from a depot, and whether a desert crossing is survivable. Its selftest reproduces Engels's own pack-animal counts to within a rounding error.
+- **`macedonian-phalanx-advisor`** (Taylor, *The Macedonian Phalanx*) — computes formation frontage and depth, how many sarissa-points project from the hedge, the unit breakdown from file to full phalanx, and frontal density against a Roman line.
+
+See [`skills/README.md`](skills/README.md) for the generator recipe.
 
 ---
 

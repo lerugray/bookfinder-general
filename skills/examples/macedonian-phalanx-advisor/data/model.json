@@ -1,0 +1,68 @@
+{
+  "_source": "Christopher Anthony / Michael J. Taylor, The Macedonian Phalanx: Equipment, Organization and Tactics from Philip and Alexander to the Roman Conquest (Pen & Sword, 2020)",
+  "_provenance": "Numbers come from the ancient tacticians (Asclepiodotus c.100 BC, Aelian, Arrian) and Polybius 18.28-32, as reported (and sometimes disputed) by Taylor. prov tags: tacticians = drill-manual figure; polybius = the one contemporary historian; taylor-note = Taylor's caveat/dispute. These are IDEAL/canonical figures; real units varied and intervals were judged by eye, not measured. See ../PROVENANCE.md. cite = line number(s) in the source content.md.",
+  "_units": "1 cubit = 1.5 ft = ~0.5 m (Taylor rounds 45cm up to 50cm 'for ease of calculation'); spacing and sarissa lengths given in cubits, with metre conversion.",
+
+  "cubit": {"feet": 1.5, "metres": 0.5, "strict_metres": 0.45, "prov": "taylor-note", "cite": "L7457,L4146"},
+
+  "spacing_by_order": {
+    "open":        {"cubits": 4, "metres": 2.0, "use": "march / advancing order ('the natural one')",       "prov": "tacticians", "cite": "L10170,L10204"},
+    "close":       {"cubits": 2, "metres": 1.0, "use": "standard battle order (pyknosis); = Polybius's 3 ft", "prov": "tacticians/polybius", "cite": "L10170,L7479"},
+    "synaspismos": {"cubits": 1, "metres": 0.5, "use": "locked shields; static defence / receive a charge",  "prov": "tacticians", "cite": "L10170,L10204", "note": "Taylor: maybe defensive-only; Polybius never uses it for calculations"}
+  },
+
+  "file_depth": {
+    "standard_macedonian": {"ranks": 16, "prov": "polybius/tacticians", "cite": "L8825,L10509"},
+    "early_alexander":     {"ranks": 8,  "prov": "polybius",            "cite": "L8827", "note": "the phalanx at Issus was probably 8 deep"},
+    "hoplite":             {"ranks": 8,  "prov": "general",             "cite": "L13024", "note": "classical comparison; up to 25-50 attested"},
+    "doubled":             {"ranks": 32, "prov": "livy/tacticians",     "cite": "L8836,L10163", "note": "Seleucids at Magnesia; limits frontage, adds push, resists breakthrough"}
+  },
+
+  "sarissa": {
+    "length_cubits_range": [10, 16],
+    "length_m_range": [5, 8],
+    "typical_metres": 6.5,
+    "rank_interval_cubits": 2,
+    "ranks_projecting_canonical": 5,
+    "grip_loss_cubits": {"polybius_counterweight": 4, "rear_grip": 2},
+    "prov": "polybius/tacticians",
+    "cite": "L7479,L7484,L7531",
+    "note": "Polybius: 16-cubit design reduced to 14 in practice; 4 cubits lost to grip+counterweight => 10 cubits project from the front-rank man; each rank back reaches 2 cubits less => 5 ranks' points project (descending 10/8/6/4/2). Rear-grip model (Asclep./Aelian) loses only 2 cubits."
+  },
+
+  "unit_hierarchy": [
+    {"name": "file (lochos / stichos / dekas)",            "men": 16,    "composition": "the basic file, 16 ranks deep",            "prov": "tacticians", "cite": "L10320,L10368"},
+    {"name": "dilochia",                                    "men": 32,    "composition": "2 files",                                  "prov": "tacticians", "cite": "L10379"},
+    {"name": "tetrarchia",                                  "men": 64,    "composition": "4 files (Philip/early-Alexander block)",   "prov": "tacticians", "cite": "L10391,L10501"},
+    {"name": "taxis (tactician sense)",                     "men": 128,   "composition": "8 files = half a syntagma",                "prov": "tacticians", "cite": "L10397", "note": "NB literary 'taxis' = a much larger ~1,500-man unit"},
+    {"name": "syntagma / speira / semeia",                  "men": 256,   "composition": "16 files x 16 ranks = a square; smallest independent manoeuvre unit", "prov": "tacticians/polybius", "cite": "L10406,L10509"},
+    {"name": "pentakosiarchia",                             "men": 512,   "composition": "2 syntagmata",                             "prov": "tacticians", "cite": "L10416"},
+    {"name": "chiliarchia (chiliarchy)",                    "men": 1024,  "composition": "4 syntagmata = 64 files (nominally 1,000)", "prov": "tacticians", "cite": "L10425,L4080"},
+    {"name": "merarchia (keras / telos)",                   "men": 2048,  "composition": "2 chiliarchiai",                           "prov": "tacticians", "cite": "L10434"},
+    {"name": "phalangarchia (strategia)",                   "men": 4096,  "composition": "2 merarchiai",                             "prov": "tacticians", "cite": "L10445"},
+    {"name": "diphalangia / keras (wing)",                  "men": 8192,  "composition": "2 phalangarchiai; the largest subunit (~32 syntagmata, 8,000 ideal)", "prov": "tacticians", "cite": "L10454,L8664"},
+    {"name": "phalanx (tetraphalangarchia)",                "men": 16384, "composition": "2 wings; full idealized doubling (a 'standard' phalanx ~16,000 = 1,000 files)", "prov": "tacticians", "cite": "L10463,L8886"}
+  ],
+  "alexander_taxis_men": 1500,
+
+  "feasibility_facts": [
+    "Only the first ~5 ranks (6 in Aelian/Arrian) can reach the enemy with their sarissas; all ranks beyond add NO frontage or reach (Polybius 18.30.1, L13185).",
+    "Depth beyond the reaching ranks buys only push/weight, morale/stability, and replacements - not extra spear points; >16 ranks was considered useless for pushing (L13185,L13444).",
+    "Depth-vs-frontage trade-off: a deeper line is steadier but narrower and more easily outflanked; a shallower line widens the front (L8827).",
+    "Broken/rough/uneven ground opens gaps in the spear-hedge and dislocates the formation - it needs flat, bare ground (Polybius 18.31, L3334; Taylor thinks this is overstated, L3343).",
+    "Flanks and rear are the decisive weakness: pikes face only forward, there are no reserves, and once the line is broken or outflanked the phalangite is poorly armed for close fighting (L3632,L3340).",
+    "The phalanx fights as a single continuous line; a gap anywhere (terrain, casualties, uneven advance) can be fatal - Romans infiltrated wherever gaps opened (Livy 44.41, L3772).",
+    "At 2-cubit close order a Macedonian occupies half a Roman's frontage, so each front-rank Roman faces 2 Macedonians + the points of ~8 ranks behind = ~10 sarissae (Polybius, L10210,L3331).",
+    "Synaspismos (1-cubit) is formed by 'doubling by men' (rear half-file steps into the front half's gaps): same men, same frontage, half the interval and half the depth (L10809)."
+  ],
+
+  "model_constants": {
+    "_note": "advise.py geometry: spacing_m = spacing_by_order[order].metres. frontage_m = (men/depth)*spacing_m; depth_m = depth*spacing_m; files = men/depth. men_for_line = (length_m/spacing_m)*depth. projection: rank n projects (sarissa_cubits - grip_loss) - 2*(n-1) cubits beyond the front-rank man; reaching ranks = count of n>=1 with that >0; convert cubits->m via cubit.metres."
+  },
+
+  "validation": {
+    "syntagma":            {"files": 16, "ranks": 16, "men": 256, "cite": "L10509"},
+    "polybius_projection": {"sarissa_cubits": 14, "grip": "polybius_counterweight", "expected_projection_cubits": [10, 8, 6, 4, 2], "reaching_ranks": 5, "cite": "L7479"},
+    "standard_phalanx":    {"men": 16000, "order": "close", "depth": 16, "expected_files": 1000, "expected_frontage_m": 1000, "expected_depth_m": 16, "cite": "L8886"}
+  }
+}
