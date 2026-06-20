@@ -122,6 +122,35 @@ def fetch_page(url: str) -> str:
         return ""
 
 
+def ensure_browser_ready() -> None:
+    """Raise a clear, actionable error if the browser can't launch.
+
+    Without this, a missing Chromium binary (Python package present but the
+    browser never downloaded — common after a package upgrade or a cache
+    cleanup) is swallowed by _fetch_page_impl's blanket except and surfaces
+    downstream as the misleading "Search failed on all mirrors." This makes
+    the real cause obvious. Runs on the dedicated Playwright thread per the
+    threading rule. Cheap after the first call (the browser instance is reused).
+    """
+    if not PLAYWRIGHT_AVAILABLE:
+        raise RuntimeError(
+            "Playwright is not installed. Run: "
+            "pip install playwright && playwright install chromium"
+        )
+    try:
+        _pw_executor.submit(_get_browser_and_context).result(timeout=60)
+    except Exception as e:
+        msg = str(e)
+        if "Executable doesn't exist" in msg or "playwright install" in msg.lower():
+            raise RuntimeError(
+                "Playwright's Chromium browser is not installed — the Python "
+                "package is present but the browser binary is missing (common "
+                "after a package upgrade or a disk/cache cleanup). Run:\n"
+                "    python3 -m playwright install chromium"
+            ) from e
+        raise RuntimeError(f"Could not launch the browser: {e}") from e
+
+
 def search_page(query: str, mirror: str, lang: str = "", content: str = "",
                 ext: str = "", sort: str = "", page_num: int = 1) -> str:
     """Fetch search results page."""

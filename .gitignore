@@ -44,3 +44,6 @@ bookfindergeneral.zip
 
 # GS state mirror junction (canonical state in generalstaff-private/)
 state/
+
+# corpus-acquisition scripts (copyrighted-corpus targets) live in generalstaff-private/state/bookfinder-acquire/, not this public repo
+acquire_*.py

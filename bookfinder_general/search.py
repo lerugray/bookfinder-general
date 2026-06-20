@@ -78,6 +78,11 @@ def search(
             "Install it with: pip install playwright && playwright install chromium"
         )
 
+    # Surface a missing/mismatched Chromium binary as a clear, actionable error
+    # instead of the misleading "Search failed on all mirrors." downstream.
+    from .browser import ensure_browser_ready
+    ensure_browser_ready()
+
     from .browser import search_page
 
     html = search_page(
