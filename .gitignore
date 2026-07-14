@@ -47,3 +47,5 @@ state/
 
 # corpus-acquisition scripts (copyrighted-corpus targets) live in generalstaff-private/state/bookfinder-acquire/, not this public repo
 acquire_*.py
+drafts/appendix-n-hunt/
+drafts/free-indirect-hunt/
